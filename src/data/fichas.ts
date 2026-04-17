@@ -1,0 +1,51 @@
+export interface Ficha { canton: string; parroquia: string; id: string; }
+
+export const FICHAS: Ficha[] = [
+  { canton: "Antonio Ante", parroquia: "Atuntaqui", id: "1022a36ea6c04bcfb73277481be21f96" },
+  { canton: "Antonio Ante", parroquia: "Imbaya", id: "7437f459b8ea42019535bd51ccb4e1b8" },
+  { canton: "Antonio Ante", parroquia: "San Francisco de Natabuela", id: "e9fa05605e4a40ada3c206fe3b2c60ee" },
+  { canton: "Antonio Ante", parroquia: "San José de Chaltura", id: "48d6c8e54ff146429856d1321039e6cd" },
+  { canton: "Antonio Ante", parroquia: "San Roque", id: "299b252d9079439fa2205554d90d62fb" },
+  { canton: "Cotacachi", parroquia: "Apuela", id: "9dc4824cd6c044809d8c0c96c2b53667" },
+  { canton: "Cotacachi", parroquia: "Cotacachi", id: "1425c4fde6c14c07b527c4f2809286f7" },
+  { canton: "Cotacachi", parroquia: "García Moreno", id: "58bf5b6ac20f4d47a8832182fd1f6f8c" },
+  { canton: "Cotacachi", parroquia: "Imantag", id: "70a20642760f492d9fd7fbf5ace93518" },
+  { canton: "Cotacachi", parroquia: "Peñaherrera", id: "2ea524d972734dfe922e27cf39a21d37" },
+  { canton: "Cotacachi", parroquia: "Plaza Gutiérrez", id: "7806e1f80f6c41d7926106b8c9f69204" },
+  { canton: "Cotacachi", parroquia: "Quiroga", id: "12b951ba368f4055968d144cc3b08baf" },
+  { canton: "Cotacachi", parroquia: "Seis de Julio de Cuellaje", id: "98e77cb68a754a768720c58613ef5119" },
+  { canton: "Cotacachi", parroquia: "Vacas Galindo", id: "e2f74daa37b44d2e977e027a85860a26" },
+  { canton: "Ibarra", parroquia: "Ambuquí", id: "782f7b97a72e4d4b8b6d6c15fe0a4410" },
+  { canton: "Ibarra", parroquia: "Angochagua", id: "1cca64a9b54a4aaba3b896c0b670fe74" },
+  { canton: "Ibarra", parroquia: "La Carolina", id: "0c64f480c3be4b7bbdec1878d3a2d88a" },
+  { canton: "Ibarra", parroquia: "La Esperanza", id: "8121b91e59a0401e9b5588bf6c9a9943" },
+  { canton: "Ibarra", parroquia: "Lita", id: "b0ed2baa664944dabcf39f56bf1fc7aa" },
+  { canton: "Ibarra", parroquia: "Salinas", id: "defd1fa5eed745c3b6c0e91cec86f76a" },
+  { canton: "Ibarra", parroquia: "San Antonio", id: "852ee6e0af9c4cb297aaac46c4f37bf2" },
+  { canton: "Ibarra", parroquia: "San Miguel de Ibarra", id: "8f92ba91d2e244fda4787f204f33d19b" },
+  { canton: "Otavalo", parroquia: "Dr. Miguel Egas Cabezas", id: "9a371c8887cc404ab304dd3d037f58f5" },
+  { canton: "Otavalo", parroquia: "Eugenio Espejo", id: "5b573af0e21c49d091a54d5b872a2909" },
+  { canton: "Otavalo", parroquia: "González Suárez", id: "58922caba0a5444387422c5f420f478d" },
+  { canton: "Otavalo", parroquia: "Otavalo", id: "89acff73e26848858831088d7fc6f396" },
+  { canton: "Otavalo", parroquia: "Pataquí", id: "a00984331df04484aab7dddd69f9bead" },
+  { canton: "Otavalo", parroquia: "San José de Quichinche", id: "eb8d352b7b804d7785ea4e62c5620da6" },
+  { canton: "Otavalo", parroquia: "San Juan de Ilumán", id: "d0b9c5c978784108aedef5002df85c74" },
+  { canton: "Otavalo", parroquia: "San Pablo", id: "56ef8b7c017b4e9ea6215601bdccf5a5" },
+  { canton: "Otavalo", parroquia: "San Rafael", id: "16ae18e4a74e4618baa72e1279c62d4f" },
+  { canton: "Otavalo", parroquia: "Selva Alegre", id: "a6b3c0a685a849c797c4d6ebecf9b79a" },
+  { canton: "Pimampiro", parroquia: "Chugá", id: "869caf5f229345279bcf43bcb8296766" },
+  { canton: "Pimampiro", parroquia: "Mariano Acosta", id: "f6f27e6077454cb9b98c6a56b1a4f0e8" },
+  { canton: "Pimampiro", parroquia: "Pimampiro", id: "0fe15cf3aaeb4447aba579e5bf1ba517" },
+  { canton: "Pimampiro", parroquia: "San Francisco de Sigsipamba", id: "01e585b49b27483dbf7d4631b3f848d4" },
+  { canton: "San Miguel de Urcuquí", parroquia: "Cahuasquí", id: "ba36a50dd43a465cb9583ade5a180ff0" },
+  { canton: "San Miguel de Urcuquí", parroquia: "La Merced de Buenos Aires", id: "8c9d0e2191dc453c8ad56fce94e75c4e" },
+  { canton: "San Miguel de Urcuquí", parroquia: "Pablo Arenas", id: "1ca3aa9fb1ab49d9b2b954787ee0da4b" },
+  { canton: "San Miguel de Urcuquí", parroquia: "San Blas", id: "6e64b18ea8684a27b6dff86e7051c92f" },
+  { canton: "San Miguel de Urcuquí", parroquia: "Tumbabiro", id: "5d3661bb1e20467896c5802ad4ba6a55" },
+  { canton: "San Miguel de Urcuquí", parroquia: "Urcuquí", id: "8164df7ce83b497dba4e23561e4ff61f" },
+];
+
+export const fichaDownloadUrl = (id: string) =>
+  `https://www.arcgis.com/sharing/rest/content/items/${id}/data`;
+export const fichaItemUrl = (id: string) =>
+  `https://www.arcgis.com/home/item.html?id=${id}`;

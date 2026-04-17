@@ -10,9 +10,11 @@ export default function Header() {
     <header className="bg-[var(--primary)] text-white shadow-md sticky top-0 z-50">
       <div className="container-prose flex items-center justify-between py-3">
         <Link href="/" className="flex items-center gap-3 no-underline text-white">
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-[var(--primary)] font-bold text-xl">
-            RA
-          </div>
+          <img
+            src={process.env.NEXT_PUBLIC_BASE_PATH ? `${process.env.NEXT_PUBLIC_BASE_PATH}/logo.png` : "/logo.png"}
+            alt="Geoportal Riesgo Agroclimático — Logo"
+            className="w-12 h-12 rounded-lg bg-white object-contain p-1"
+          />
           <div className="leading-tight">
             <div className="text-lg font-bold">Geoportal Riesgo Agroclimático</div>
             <div className="text-xs opacity-80">{SITE.province} · USGP {SITE.year}</div>

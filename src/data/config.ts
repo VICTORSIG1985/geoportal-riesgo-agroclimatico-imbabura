@@ -50,6 +50,7 @@ export const MENU = [
   { slug: "/metodologia", label: "Metodología" },
   { slug: "/resultados", label: "Resultados" },
   { slug: "/datos", label: "Datos Abiertos" },
+  { slug: "/descargas", label: "Descargas" },
   { slug: "/asistente", label: "Asistente IA" },
   { slug: "/acerca", label: "Acerca" },
 ];

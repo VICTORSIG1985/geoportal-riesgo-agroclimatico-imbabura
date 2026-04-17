@@ -1,0 +1,90 @@
+[
+  {
+    "name": "SCRIPT 00 CONFIGURACIÓN INICIAL DEL PROYECTO.py",
+    "size_kb": 18.0
+  },
+  {
+    "name": "SCRIPT 01 DESCARGA Y PROCESAMIENTO DE BASD-CMIP6-PE.py",
+    "size_kb": 23.4
+  },
+  {
+    "name": "SCRIPT 01B DESCARGA DE DATOS CLIMÁTICOS BASD-CMIP6-PE.py",
+    "size_kb": 13.9
+  },
+  {
+    "name": "SCRIPT 02 RECORTE ESPACIAL DE BASD-CMIP6-PE A IMBABURA.py",
+    "size_kb": 21.6
+  },
+  {
+    "name": "SCRIPT 03A CÁLCULO DE EVAPOTRANSPIRACIÓN DE REFERENCIA (ET₀).py",
+    "size_kb": 26.9
+  },
+  {
+    "name": "SCRIPT 03B CÁLCULO DE DÉFICIT HÍDRICO DIARIO.py",
+    "size_kb": 18.1
+  },
+  {
+    "name": "SCRIPT 03C CONTEO DE DÍAS CON ESTRÉS TÉRMICO POR CULTIVO.py",
+    "size_kb": 19.8
+  },
+  {
+    "name": "SCRIPT 03D DETECCIÓN DE SEQUÍAS AGRÍCOLAS (DRY SPELLS).py",
+    "size_kb": 16.9
+  },
+  {
+    "name": "SCRIPT 03E CONTEO DE HELADAS (Tmin menor a 0°C).py",
+    "size_kb": 18.2
+  },
+  {
+    "name": "SCRIPT 03F AGREGACIÓN TEMPORAL DE ÍNDICES AGROCLIMÁTICOS.py",
+    "size_kb": 31.6
+  },
+  {
+    "name": "SCRIPT 04B ADQUISICIÓN MULTI-FUENTE DE DATOS DE DISTRIBUCIÓN DE CULTIVOS.py",
+    "size_kb": 39.2
+  },
+  {
+    "name": "SCRIPT 04C DESAGREGACIÓN ESPACIAL DE SUPERFICIE AGRÍCOLA POR PARROQUIA.py",
+    "size_kb": 65.2
+  },
+  {
+    "name": "SCRIPT 05A v1.0 DESCARGA Y LIMPIEZA DE OCURRENCIAS GBIF.py",
+    "size_kb": 25.5
+  },
+  {
+    "name": "SCRIPT 05B v2.0 EXTRACCIÓN CLIMÁTICA + PSEUDO-AUSENCIAS + DATASET RF.py",
+    "size_kb": 47.3
+  },
+  {
+    "name": "SCRIPT 05C AGREGAR VARIABLES TÉRMICAS A DATASETS DE ENTRENAMIENTO RF.py",
+    "size_kb": 14.1
+  },
+  {
+    "name": "SCRIPT 06 ENTRENAMIENTO DE RANDOM FOREST + ANÁLISIS SHAP.py",
+    "size_kb": 38.1
+  },
+  {
+    "name": "SCRIPT 06B v1.4 PROYECCIÓN DE RANDOM FOREST A ESCENARIOS CMIP6.py",
+    "size_kb": 31.3
+  },
+  {
+    "name": "SCRIPT 06C_PARROQUIAL AGREGACIÓN PARROQUIAL (NEAREST NEIGHBOR).py",
+    "size_kb": 13.2
+  },
+  {
+    "name": "SCRIPT 07 RED BAYESIANA PARA INTEGRACIÓN DE RIESGO AGROCLIMÁTICO.py",
+    "size_kb": 42.6
+  },
+  {
+    "name": "SCRIPT 08 GENERACIÓN DE MAPAS DE RIESGO AGROCLIMÁTICO POR PARROQUIA.py",
+    "size_kb": 30.2
+  },
+  {
+    "name": "SCRIPT 09 GENERACIÓN DE FICHAS TÉCNICAS PARROQUIALES.py",
+    "size_kb": 26.0
+  },
+  {
+    "name": "SCRIPT 10 VALIDACIÓN FINAL Y AUDITORÍA ISO 19115.py",
+    "size_kb": 33.0
+  }
+]

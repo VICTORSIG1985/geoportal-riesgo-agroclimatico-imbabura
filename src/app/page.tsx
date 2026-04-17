@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SITE } from "@/data/config";
-import { Map, Image as ImgIcon, FileText, Database, Bot, BookOpen, Microscope, BarChart3, Info, ArrowRight } from "lucide-react";
+import { Map, Image as ImgIcon, FileText, Database, Bot, BookOpen, Microscope, BarChart3, Info, ArrowRight, Download } from "lucide-react";
 
 const services = [
   { href: "/visor", icon: Map, color: "#B2182B", title: "Visor Cartográfico", desc: "Mapa interactivo con 3 capas, filtros por cultivo × SSP × horizonte, popups con descarga de fichas." },
@@ -9,7 +9,8 @@ const services = [
   { href: "/metodologia", icon: Microscope, color: "#6B4E9B", title: "Metodología", desc: "Pipeline de 22 scripts Python en 5 fases, Random Forest + Red Bayesiana, métricas de desempeño." },
   { href: "/resultados", icon: BarChart3, color: "#EF8A62", title: "Resultados Interactivos", desc: "Ranking parroquial dinámico, IR por cultivo/SSP/horizonte, tablas y gráficos del manuscrito." },
   { href: "/datos", icon: Database, color: "#333333", title: "Datos Abiertos", desc: "3 Feature Services REST públicos, metadatos ISO 19115, código Python y DOI Zenodo." },
-  { href: "/asistente", icon: Bot, color: "#4F46E5", title: "Asistente IA", desc: "Consulta en lenguaje natural sobre metodología y resultados. Retrieval sobre manuscrito (RAG)." },
+  { href: "/descargas", icon: Download, color: "#1f5fa8", title: "Descargas", desc: "22 scripts Python auditados y publicados por fase metodológica para trazabilidad científica." },
+  { href: "/asistente", icon: Bot, color: "#4F46E5", title: "Asistente IA", desc: "Consulta en lenguaje natural sobre el manuscrito. Búsqueda local + Claude API opcional (BYOK)." },
   { href: "/acerca", icon: Info, color: "#4A5568", title: "Acerca del Geoportal", desc: "Autor, institución, cita sugerida, manuscrito de referencia, licencia y contacto." },
 ];
 
@@ -25,17 +26,23 @@ const stats = [
 export default function Home() {
   return (
     <>
-      <section className="bg-gradient-to-br from-[var(--primary)] via-[var(--primary-dark)] to-[#051E33] text-white py-20">
-        <div className="container-prose">
+      <section className="relative overflow-hidden">
+        <img
+          src="img/imbabura_geoparque_slide1.png"
+          alt="Paisaje de Imbabura — volcán y lago"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--primary-dark)]/90 via-[var(--primary)]/80 to-[#051E33]/85"></div>
+        <div className="relative container-prose py-24 text-white">
           <div className="max-w-4xl">
-            <div className="inline-block bg-white/10 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-6">
+            <div className="inline-block bg-white/15 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-6">
               USGP · Universidad San Gregorio de Portoviejo · {SITE.year}
             </div>
-            <h1 className="text-white mb-6 leading-tight">
+            <h1 className="text-white mb-6 leading-tight drop-shadow-lg">
               Geoportal de Riesgo Agroclimático<br/>
               <span className="text-[var(--accent-3)]">Imbabura, Ecuador</span>
             </h1>
-            <p className="text-xl opacity-90 max-w-3xl leading-relaxed mb-8">
+            <p className="text-xl opacity-95 max-w-3xl leading-relaxed mb-8 drop-shadow">
               Evaluación integrada del <strong>riesgo agroclimático</strong> para cultivos andinos (papa, maíz,
               fréjol, quinua) en las <strong>42 parroquias</strong> de Imbabura bajo 9 escenarios climáticos <strong>CMIP6</strong>,
               combinando <strong>Random Forest</strong> (SDM) con una <strong>Red Bayesiana</strong> de 7 nodos
@@ -54,6 +61,10 @@ export default function Home() {
             </div>
           </div>
         </div>
+        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[11px] py-1.5 px-4 text-center">
+          Imagen: Geoparque Mundial UNESCO Imbabura · Fuente: <a href="https://geoparque.imbabura.gob.ec/" target="_blank" rel="noopener" className="underline text-white">geoparque.imbabura.gob.ec</a> ·
+          Elaboración: Subdirección de Planificación Territorial, Prefectura de Imbabura · Ref. PDOT Imbabura 2023-2027
+        </div>
       </section>
 
       <section className="bg-white border-b border-[var(--border)]">
@@ -71,7 +82,7 @@ export default function Home() {
         <div className="text-center mb-12">
           <h2 className="mb-3">Servicios del Geoportal</h2>
           <p className="text-lg text-[var(--text-muted)] max-w-2xl mx-auto">
-            Ocho servicios integrados para acceder, analizar y descargar la información científica del proyecto.
+            Nueve servicios integrados para acceder, analizar y descargar la información científica del proyecto.
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">

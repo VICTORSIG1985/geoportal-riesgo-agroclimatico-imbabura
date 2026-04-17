@@ -4,7 +4,7 @@ import { SERVICES, SITE } from "@/data/config";
 
 export default function Servicios() {
   const services = [
-    { href: "/visor", external: SERVICES.visorUrl, icon: Map, color: "#B2182B", title: "Visor Cartográfico",
+    { href: "/visor", icon: Map, color: "#B2182B", title: "Visor Cartográfico",
       desc: "Visor interactivo con tres capas publicadas (Parroquias Base, Riesgo Long, Priorización Final), filtros dinámicos por cultivo × SSP × horizonte, leyenda, bookmarks territoriales, búsqueda por parroquia y popups con descarga directa de fichas.",
       tech: "ArcGIS Instant App (Sidebar) + 3 Feature Services REST públicos" },
     { href: "/galeria", icon: ImgIcon, color: "#0F4C81", title: "Galería Científica",
@@ -58,11 +58,6 @@ export default function Servicios() {
               </div>
               <div className="flex flex-col gap-2">
                 <Link href={s.href} className="btn-primary">Acceder</Link>
-                {s.external && (
-                  <a href={s.external} target="_blank" className="btn-secondary text-sm inline-flex items-center">
-                    <ExternalLink size={14}/> Externo
-                  </a>
-                )}
               </div>
             </div>
           );

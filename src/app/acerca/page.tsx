@@ -1,5 +1,6 @@
 import { SITE } from "@/data/config";
 import { User, Book, Award, Mail, ExternalLink } from "lucide-react";
+import Avatar from "@/components/Avatar";
 
 export const metadata = { title: "Acerca del Geoportal · Pinto Páez 2026" };
 
@@ -18,10 +19,10 @@ export default function AcercaPage() {
       <section className="container-prose py-12 grid md:grid-cols-3 gap-6">
         <div className="card md:col-span-2">
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 rounded-full bg-[var(--primary)] text-white flex items-center justify-center text-2xl font-bold">VP</div>
+            <Avatar src="img/autor_vhpp.jpg" name="Víctor Hugo Pinto Páez" size={96}/>
             <div>
               <h2 className="text-2xl mb-0">{SITE.author}</h2>
-              <div className="text-sm text-[var(--text-muted)]">Maestrante · USGP {SITE.year}</div>
+              <div className="text-sm text-[var(--text-muted)]">Maestrando · USGP {SITE.year}</div>
             </div>
           </div>
           <p className="text-[var(--text-muted)] leading-relaxed">
@@ -67,8 +68,7 @@ export default function AcercaPage() {
         <h2 className="mb-4">Cita sugerida</h2>
         <div className="card bg-[var(--bg)] border-l-4 border-[var(--primary)]">
           <p className="font-serif text-[var(--text)] text-[15px] leading-relaxed">
-            Pinto Páez, V.H. ({SITE.year}). <em>Geoportal Riesgo Agroclimático — {SITE.province}</em>. {SITE.institution} (USGP).
-            DOI: <a href={`https://doi.org/${SITE.doi}`} target="_blank">{SITE.doi}</a>
+            Pinto Páez, V. H. (2026). <em>Geoportal Riesgo Agroclimático — Imbabura, Ecuador</em> [Geoportal]. Universidad San Gregorio de Portoviejo. https://doi.org/{SITE.doi}
           </p>
         </div>
       </section>
@@ -80,9 +80,8 @@ export default function AcercaPage() {
             A la <strong>USGP</strong> por el marco académico e institucional; al equipo docente por la orientación metodológica;
             y a las instituciones proveedoras de datos públicos: <strong>BASD-CMIP6-PE</strong> (Fernandez-Palomino et al. 2024),
             <strong>GBIF</strong>, <strong>MapSPAM v2r0</strong> (IFPRI 2024), <strong>ESPAC 2024</strong> (INEC),
-            <strong>CONALI/INEC</strong>. Los scripts se desarrollaron con asistencia de <strong>Claude (Anthropic)</strong> para
-            generación y depuración de código; el autor revisó todas las decisiones metodológicas, validó los resultados y
-            asume responsabilidad exclusiva del trabajo publicado.
+            <strong>CONALI/INEC</strong>. El autor revisó todas las decisiones metodológicas, validó los resultados y asume
+            responsabilidad exclusiva del trabajo publicado.
           </p>
         </div>
       </section>

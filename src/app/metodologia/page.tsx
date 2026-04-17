@@ -1,5 +1,6 @@
-import { figureUrl, FIGURES } from "@/data/figures";
 import { Microscope, Cpu, Network, CheckCircle2, AlertTriangle } from "lucide-react";
+import PipelineDiagram from "@/components/PipelineDiagram";
+import DAGDiagram from "@/components/DAGDiagram";
 
 export const metadata = {
   title: "Metodología · Geoportal Riesgo Agroclimático Imbabura",
@@ -7,8 +8,6 @@ export const metadata = {
 };
 
 export default function MetodologiaPage() {
-  const pipeline = FIGURES.find(f => f.title.includes("Pipeline"))!;
-  const dag = FIGURES.find(f => f.title.includes("DAG"))!;
 
   const fases = [
     { n: 1, title: "Preparación climática", scripts: "Scripts 00–02",
@@ -25,7 +24,7 @@ export default function MetodologiaPage() {
 
   const metricas = [
     { cultivo: "Papa", auc: "0,871", tss: "0,603", oob: "0,169", top: "dias_estres_papa_anual (ΔAUC 0,021 ± 0,003)" },
-    { cultivo: "Quinua", auc: "0,867", tss: "0,614", oob: "0,179", top: "dias_secos_anual (exploratorio)" },
+    { cultivo: "Quinua", auc: "0,867", tss: "0,614", oob: "0,179", top: "dias_secos_anual (ΔAUC 0,015)" },
     { cultivo: "Fréjol", auc: "0,859", tss: "0,574", oob: "0,174", top: "dias_secos_anual (ΔAUC 0,020)" },
     { cultivo: "Maíz", auc: "0,804", tss: "0,511", oob: "0,252", top: "dias_secos_anual (ΔAUC 0,049)" },
   ];
@@ -43,13 +42,12 @@ export default function MetodologiaPage() {
       </section>
 
       <section className="container-prose py-12">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-[var(--border)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={figureUrl(pipeline)} alt={pipeline.title} className="w-full"/>
-          <div className="p-5 text-sm text-[var(--text-muted)]">
-            <strong>Figura — Pipeline científico (5 fases):</strong> {pipeline.caption}
-          </div>
-        </div>
+        <h2 className="mb-6 flex items-center gap-3"><Cpu className="text-[var(--primary)]"/> Pipeline científico</h2>
+        <PipelineDiagram/>
+        <p className="text-sm text-[var(--text-muted)] mt-3">
+          Organizador gráfico nativo del sitio (SVG/HTML) · 22 scripts Python en 5 fases · Pinto Páez (2026), Script 07.
+          Los scripts pueden descargarse por fase en la sección <a href="/datos" className="text-[var(--primary)] font-semibold">Datos Abiertos</a>.
+        </p>
       </section>
 
       <section className="container-prose py-8">
@@ -71,26 +69,25 @@ export default function MetodologiaPage() {
       </section>
 
       <section className="container-prose py-10">
-        <h2 className="mb-6 flex items-center gap-3"><Network className="text-[var(--primary)]"/> Red Bayesiana — DAG</h2>
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div className="bg-white rounded-xl shadow border border-[var(--border)] overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={figureUrl(dag)} alt={dag.title} className="w-full"/>
-          </div>
+        <h2 className="mb-6 flex items-center gap-3"><Network className="text-[var(--primary)]"/> Red Bayesiana — DAG de 7 nodos</h2>
+        <div className="card bg-white">
+          <DAGDiagram/>
+        </div>
+        <div className="grid md:grid-cols-2 gap-6 mt-6">
           <div>
-            <h3 className="text-xl mb-3">7 nodos · 6 aristas · 3 niveles</h3>
-            <ul className="space-y-2 text-sm">
+            <h3 className="text-lg mb-2">Estructura de la red</h3>
+            <ul className="space-y-2 text-sm text-[var(--text-muted)]">
               <li><strong>Nodos raíz:</strong> Peligro_Deficit, Peligro_Termico, Peligro_Sequia, Exposicion, Susceptibilidad_Agroclimática</li>
               <li><strong>Nodo intermedio:</strong> Peligro (regla de daño máximo → Alto si algún subpeligro es Alto)</li>
               <li><strong>Nodo objetivo:</strong> Riesgo (IR ∈ [0, 1])</li>
               <li><strong>IR:</strong> 0 · P(Bajo) + 0,5 · P(Medio) + 1 · P(Alto)</li>
               <li><strong>Estados:</strong> Bajo / Medio / Alto · umbrales Tabla 3 del manuscrito</li>
             </ul>
-            <div className="mt-4 p-4 bg-amber-50 border-l-4 border-amber-400 rounded-r">
-              <strong>Nota terminológica:</strong> se adopta <em>Susceptibilidad Agroclimática</em> en lugar de
-              <em> Vulnerabilidad</em> porque el nodo representa sensibilidad biofísica (1 − aptitud RF), no la vulnerabilidad
-              socioeconómica del IPCC AR6.
-            </div>
+          </div>
+          <div className="p-4 bg-amber-50 border-l-4 border-amber-400 rounded-r text-sm">
+            <strong>Nota terminológica:</strong> se adopta <em>Susceptibilidad Agroclimática</em> en lugar de
+            <em> Vulnerabilidad</em> porque el nodo representa sensibilidad biofísica (1 − aptitud RF), no la vulnerabilidad
+            socioeconómica del IPCC AR6.
           </div>
         </div>
       </section>

@@ -1,0 +1,317 @@
+{
+  "when": "2026-04-17T11:29:54.504533",
+  "files": [
+    {
+      "name": "SCRIPT 00 CONFIGURACIÓN INICIAL DEL PROYECTO.py",
+      "phase": "1 · Preparación climática",
+      "size_kb": 17.5,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 01 DESCARGA Y PROCESAMIENTO DE BASD-CMIP6-PE.py",
+      "phase": "1 · Preparación climática",
+      "size_kb": 22.9,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        },
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\DATA\\AOI_IMBABURA_CANTON.gpkg\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 01B DESCARGA DE DATOS CLIMÁTICOS BASD-CMIP6-PE.py",
+      "phase": "1 · Preparación climática",
+      "size_kb": 13.4,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\02_DATOS\\climaticos\\BASD_CMIP6_PE\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 02 RECORTE ESPACIAL DE BASD-CMIP6-PE A IMBABURA.py",
+      "phase": "1 · Preparación climática",
+      "size_kb": 21.0,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 03A CÁLCULO DE EVAPOTRANSPIRACIÓN DE REFERENCIA (ET₀).py",
+      "phase": "2 · Índices agroclimáticos",
+      "size_kb": 26.4,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 03B CÁLCULO DE DÉFICIT HÍDRICO DIARIO.py",
+      "phase": "2 · Índices agroclimáticos",
+      "size_kb": 17.6,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 03C CONTEO DE DÍAS CON ESTRÉS TÉRMICO POR CULTIVO.py",
+      "phase": "2 · Índices agroclimáticos",
+      "size_kb": 19.3,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 03D DETECCIÓN DE SEQUÍAS AGRÍCOLAS (DRY SPELLS).py",
+      "phase": "2 · Índices agroclimáticos",
+      "size_kb": 16.4,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 03E CONTEO DE HELADAS (Tmin menor a 0°C).py",
+      "phase": "2 · Índices agroclimáticos",
+      "size_kb": 17.7,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 03F AGREGACIÓN TEMPORAL DE ÍNDICES AGROCLIMÁTICOS.py",
+      "phase": "2 · Índices agroclimáticos",
+      "size_kb": 31.0,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 04B ADQUISICIÓN MULTI-FUENTE DE DATOS DE DISTRIBUCIÓN DE CULTIVOS.py",
+      "phase": "3 · Exposición agrícola",
+      "size_kb": 38.6,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 04C DESAGREGACIÓN ESPACIAL DE SUPERFICIE AGRÍCOLA POR PARROQUIA.py",
+      "phase": "3 · Exposición agrícola",
+      "size_kb": 64.7,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        },
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\Imbabura_Parroquia.gpkg\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 05A v1.0 DESCARGA Y LIMPIEZA DE OCURRENCIAS GBIF.py",
+      "phase": "4 · SDM Random Forest",
+      "size_kb": 25.0,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 05B v2.0 EXTRACCIÓN CLIMÁTICA + PSEUDO-AUSENCIAS + DATASET RF.py",
+      "phase": "4 · SDM Random Forest",
+      "size_kb": 46.7,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 05C AGREGAR VARIABLES TÉRMICAS A DATASETS DE ENTRENAMIENTO RF.py",
+      "phase": "4 · SDM Random Forest",
+      "size_kb": 13.7,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\02_DATOS\\climaticos\\BASD_CMIP6_PE\\recortados\\historical\""
+        },
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\02_DATOS\\sdm_training\""
+        },
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\02_DATOS\\climaticos\\indices\\agregados\\historical\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 06 ENTRENAMIENTO DE RANDOM FOREST + ANÁLISIS SHAP.py",
+      "phase": "4 · SDM Random Forest",
+      "size_kb": 37.5,
+      "hits": []
+    },
+    {
+      "name": "SCRIPT 06B v1.4 PROYECCIÓN DE RANDOM FOREST A ESCENARIOS CMIP6.py",
+      "phase": "4 · SDM Random Forest",
+      "size_kb": 30.8,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        },
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        },
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\Prevención_de_Riesgos\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 06C_PARROQUIAL AGREGACIÓN PARROQUIAL (NEAREST NEIGHBOR).py",
+      "phase": "Otro",
+      "size_kb": 12.7,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\Prevención_de_Riesgos\""
+        },
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 07 RED BAYESIANA PARA INTEGRACIÓN DE RIESGO AGROCLIMÁTICO.py",
+      "phase": "5 · Integración bayesiana",
+      "size_kb": 42.2,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\Prevención_de_Riesgos\""
+        },
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\02_DATOS\""
+        },
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\\04_RESULTADOS\\exposicion_agricola\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 08 GENERACIÓN DE MAPAS DE RIESGO AGROCLIMÁTICO POR PARROQUIA.py",
+      "phase": "5 · Integración bayesiana",
+      "size_kb": 29.6,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 09 GENERACIÓN DE FICHAS TÉCNICAS PARROQUIALES.py",
+      "phase": "5 · Integración bayesiana",
+      "size_kb": 25.5,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    },
+    {
+      "name": "SCRIPT 10 VALIDACIÓN FINAL Y AUDITORÍA ISO 19115.py",
+      "phase": "5 · Integración bayesiana",
+      "size_kb": 32.5,
+      "hits": [
+        {
+          "kind": "windows_abs_path",
+          "sample": "r\"D:\\POSGRADOS\\TESIS\""
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "windows_abs_path": 30
+  },
+  "phases": {
+    "1 · Preparación climática": [
+      "SCRIPT 00 CONFIGURACIÓN INICIAL DEL PROYECTO.py",
+      "SCRIPT 01 DESCARGA Y PROCESAMIENTO DE BASD-CMIP6-PE.py",
+      "SCRIPT 01B DESCARGA DE DATOS CLIMÁTICOS BASD-CMIP6-PE.py",
+      "SCRIPT 02 RECORTE ESPACIAL DE BASD-CMIP6-PE A IMBABURA.py"
+    ],
+    "2 · Índices agroclimáticos": [
+      "SCRIPT 03A CÁLCULO DE EVAPOTRANSPIRACIÓN DE REFERENCIA (ET₀).py",
+      "SCRIPT 03B CÁLCULO DE DÉFICIT HÍDRICO DIARIO.py",
+      "SCRIPT 03C CONTEO DE DÍAS CON ESTRÉS TÉRMICO POR CULTIVO.py",
+      "SCRIPT 03D DETECCIÓN DE SEQUÍAS AGRÍCOLAS (DRY SPELLS).py",
+      "SCRIPT 03E CONTEO DE HELADAS (Tmin menor a 0°C).py",
+      "SCRIPT 03F AGREGACIÓN TEMPORAL DE ÍNDICES AGROCLIMÁTICOS.py"
+    ],
+    "3 · Exposición agrícola": [
+      "SCRIPT 04B ADQUISICIÓN MULTI-FUENTE DE DATOS DE DISTRIBUCIÓN DE CULTIVOS.py",
+      "SCRIPT 04C DESAGREGACIÓN ESPACIAL DE SUPERFICIE AGRÍCOLA POR PARROQUIA.py"
+    ],
+    "4 · SDM Random Forest": [
+      "SCRIPT 05A v1.0 DESCARGA Y LIMPIEZA DE OCURRENCIAS GBIF.py",
+      "SCRIPT 05B v2.0 EXTRACCIÓN CLIMÁTICA + PSEUDO-AUSENCIAS + DATASET RF.py",
+      "SCRIPT 05C AGREGAR VARIABLES TÉRMICAS A DATASETS DE ENTRENAMIENTO RF.py",
+      "SCRIPT 06 ENTRENAMIENTO DE RANDOM FOREST + ANÁLISIS SHAP.py",
+      "SCRIPT 06B v1.4 PROYECCIÓN DE RANDOM FOREST A ESCENARIOS CMIP6.py"
+    ],
+    "Otro": [
+      "SCRIPT 06C_PARROQUIAL AGREGACIÓN PARROQUIAL (NEAREST NEIGHBOR).py"
+    ],
+    "5 · Integración bayesiana": [
+      "SCRIPT 07 RED BAYESIANA PARA INTEGRACIÓN DE RIESGO AGROCLIMÁTICO.py",
+      "SCRIPT 08 GENERACIÓN DE MAPAS DE RIESGO AGROCLIMÁTICO POR PARROQUIA.py",
+      "SCRIPT 09 GENERACIÓN DE FICHAS TÉCNICAS PARROQUIALES.py",
+      "SCRIPT 10 VALIDACIÓN FINAL Y AUDITORÍA ISO 19115.py"
+    ]
+  }
+}

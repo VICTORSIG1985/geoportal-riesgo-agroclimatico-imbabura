@@ -14,7 +14,7 @@ export default function Galeria() {
         title="Galería Científica"
         subtitle="60 figuras cartográficas derivadas de la investigación, organizadas por 6 grupos temáticos. Todas públicas en ArcGIS Online."
         image="imbabura_geoparque_slide2.png"
-        overlayColor="rgba(107,78,155,0.72)"
+        overlayColor="rgba(107,78,155,0.35)"
         credit="Imagen: Geoparque Mundial UNESCO Imbabura · Fuente: geoparque.imbabura.gob.ec · Elaboración: Prefectura de Imbabura"
       />
 

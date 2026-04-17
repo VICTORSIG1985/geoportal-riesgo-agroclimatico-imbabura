@@ -22,7 +22,7 @@ export default function FichasPage() {
         title="Fichas Parroquiales"
         subtitle="42 fichas PDF (una por parroquia) con IR medio y máximo bajo los 9 escenarios, cultivo más vulnerable, mensaje de priorización y recomendación operativa para los GADs."
         image="wm_lago_san_pablo.jpg"
-        overlayColor="rgba(34,139,110,0.78)"
+        overlayColor="rgba(34,139,110,0.38)"
         credit="Imagen: Muelle del Lago San Pablo (Otavalo) · Wikimedia Commons · CC BY-SA"
       />
 

@@ -178,7 +178,7 @@ Abajo tienes preguntas sugeridas por categoría para empezar.`
         title="Asistente IA del Geoportal"
         subtitle="Respuestas basadas en el manuscrito sometido a Natural Hazards (Pinto Páez, 2026). Modo local con 30+ preguntas pre-indexadas o generación con Claude API."
         image="imbabura_geoparque_slide2.png"
-        overlayColor="rgba(79,70,229,0.78)"
+        overlayColor="rgba(79,70,229,0.38)"
         credit="Imagen: Geoparque Mundial UNESCO Imbabura · geoparque.imbabura.gob.ec"
       />
 

@@ -13,9 +13,9 @@ export default function DatosPage() {
       <PageHero
         title="Datos Abiertos"
         subtitle="Acceso libre y reproducible a los 3 Feature Services REST, al código fuente, al dataset autoritativo y a los metadatos ISO 19115. Licencia CC BY 4.0."
-        image="wm_imbabura.jpg"
-        overlayColor="rgba(30,30,30,0.82)"
-        credit="Imagen: Volcán Imbabura — Wikimedia Commons · CC BY-SA"
+        image="wm_san_pablo_lago.jpg"
+        overlayColor="rgba(15,76,129,0.4)"
+        credit="Imagen: San Pablo del Lago (Otavalo) — Wikimedia Commons · CC BY-SA"
       />
 
       <section className="container-prose py-8">

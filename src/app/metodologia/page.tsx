@@ -36,7 +36,7 @@ export default function MetodologiaPage() {
         title="Metodología"
         subtitle="Pipeline científico reproducible de 22 scripts Python organizados en 5 fases, integrando datos CMIP6 con corrección de sesgo, modelos de distribución de especies (Random Forest) y una Red Bayesiana de 7 nodos."
         image="wm_cotacachi.jpg"
-        overlayColor="rgba(107,78,155,0.82)"
+        overlayColor="rgba(107,78,155,0.38)"
         credit="Imagen: Volcán Cotacachi · Wikimedia Commons · CC BY-SA"
       />
 

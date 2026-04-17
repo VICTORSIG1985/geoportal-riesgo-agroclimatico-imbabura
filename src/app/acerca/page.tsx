@@ -14,7 +14,7 @@ export default function AcercaPage() {
         title="Acerca del Geoportal"
         subtitle="Marco institucional, autor, cita sugerida, manuscrito de referencia y contacto."
         image="geoparque_Mapa_Geoparques.jpg"
-        overlayColor="rgba(10,53,88,0.85)"
+        overlayColor="rgba(10,53,88,0.45)"
         credit="Imagen: Geoparques Mundiales UNESCO · geoparque.imbabura.gob.ec"
       />
 
@@ -70,7 +70,7 @@ export default function AcercaPage() {
         <h2 className="mb-4">Cita sugerida</h2>
         <div className="card bg-[var(--bg)] border-l-4 border-[var(--primary)]">
           <p className="font-serif text-[var(--text)] text-[15px] leading-relaxed">
-            Pinto Páez, V. H. (2026). <em>Geoportal Riesgo Agroclimático — Imbabura, Ecuador</em> [Geoportal]. Universidad San Gregorio de Portoviejo. https://doi.org/{SITE.doi}
+            Pinto Páez, V. H. (2026). <em>Geoportal riesgo agroclimático — Imbabura, Ecuador</em> [Geoportal]. Zenodo. https://doi.org/{SITE.doi}
           </p>
         </div>
       </section>

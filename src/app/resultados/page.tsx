@@ -17,7 +17,7 @@ export default function ResultadosPage() {
         title="Resultados"
         subtitle="Principales hallazgos de la investigación: ranking parroquial, IR por cultivo y escenario, exposición agrícola y pérdida de aptitud climática."
         image="wm_san_pablo_lago.jpg"
-        overlayColor="rgba(239,138,98,0.72)"
+        overlayColor="rgba(239,138,98,0.35)"
         accent="#FFFFFF"
         credit="Imagen: San Pablo del Lago (Otavalo) · Wikimedia Commons · CC BY-SA"
       />

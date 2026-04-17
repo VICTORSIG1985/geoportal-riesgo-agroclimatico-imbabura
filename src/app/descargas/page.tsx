@@ -49,7 +49,7 @@ export default function DescargasPage() {
         title="Descargas — Código fuente por fase"
         subtitle="22 scripts Python del pipeline científico, publicados para trazabilidad y replicabilidad. Adapte las rutas de entrada y podrá reproducir el estudio."
         image="wm_cuicocha.jpg"
-        overlayColor="rgba(31,95,168,0.82)"
+        overlayColor="rgba(31,95,168,0.4)"
         credit="Imagen: Laguna de Cuicocha · Wikimedia Commons · CC BY-SA"
       />
 

@@ -37,7 +37,7 @@ export default function Servicios() {
         title="Servicios del Geoportal"
         subtitle="Nueve servicios integrados que combinan visualización cartográfica, descarga de datos, consulta científica e inteligencia artificial."
         image="wm_cuicocha.jpg"
-        overlayColor="rgba(15,76,129,0.78)"
+        overlayColor="rgba(15,76,129,0.35)"
         credit="Imagen: Laguna de Cuicocha (Cotacachi) · Wikimedia Commons · CC BY-SA"
       />
 

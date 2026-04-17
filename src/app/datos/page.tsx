@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Database, Code, FileJson, Download, ExternalLink, Shield, Map, FileText, Info } from "lucide-react";
+import { Database, Code, FileJson, Download, ExternalLink, Shield, Map, FileText, Info, FileDown } from "lucide-react";
 import { SERVICES, SITE } from "@/data/config";
 import PageHero from "@/components/PageHero";
 import ExternalLinkGate from "@/components/ExternalLinkGate";
+import DataDownloadGate from "@/components/DataDownloadGate";
 
 export const metadata = { title: "Datos Abiertos · Geoportal Imbabura" };
 
@@ -13,9 +14,9 @@ export default function DatosPage() {
       <PageHero
         title="Datos Abiertos"
         subtitle="Acceso libre y reproducible a los 3 Feature Services REST, al código fuente, al dataset autoritativo y a los metadatos ISO 19115. Licencia CC BY 4.0."
-        image="wm_san_pablo_lago.jpg"
+        image="wm_yahuarcocha.jpg"
         overlayColor="rgba(15,76,129,0.4)"
-        credit="Imagen: San Pablo del Lago (Otavalo) — Wikimedia Commons · CC BY-SA"
+        credit="Imagen: Laguna de Yahuarcocha (Ibarra) — Wikimedia Commons · CC BY-SA"
       />
 
       <section className="container-prose py-8">
@@ -52,18 +53,44 @@ export default function DatosPage() {
                   </div>
                 </div>
               </div>
-              <div className="mt-4 grid sm:grid-cols-3 gap-2">
-                <a href={`${L.url}/query?where=1%3D1&outFields=*&f=geojson`} target="_blank" rel="noopener"
-                  className="btn-primary text-sm justify-center">
-                  <Download size={14}/> Descargar GeoJSON
-                </a>
-                <a href={`${L.url}?f=json`} target="_blank" rel="noopener"
-                  className="btn-secondary text-sm justify-center" title="Metadatos del servicio en JSON (avanzado)">
-                  <FileJson size={14}/> Ver JSON del servicio
-                </a>
+              <div className="mt-4 grid sm:grid-cols-4 gap-2">
+                <DataDownloadGate
+                  sourceUrl={`${L.url}/query?where=1%3D1&outFields=*&f=geojson`}
+                  fileName={`${L.title}.geojson`}
+                  format="geojson"
+                  tipo="geojson"
+                  className="btn-primary text-sm justify-center"
+                  ariaLabel={`Descargar ${L.title} GeoJSON`}
+                >
+                  <Download size={14}/> GeoJSON
+                </DataDownloadGate>
+                <DataDownloadGate
+                  sourceUrl={`${L.url}/query?where=1%3D1&outFields=*&f=geojson`}
+                  fileName={`${L.title}.md`}
+                  format="md"
+                  tipo="geojson"
+                  mdTitle={`Datos — ${L.title}`}
+                  className="btn-secondary text-sm justify-center"
+                  ariaLabel={`Descargar ${L.title} Markdown`}
+                >
+                  <FileDown size={14}/> Markdown (tabla)
+                </DataDownloadGate>
+                <DataDownloadGate
+                  sourceUrl={`${L.url}?f=json`}
+                  fileName={`${L.title}_metadata.json`}
+                  format="json"
+                  tipo="geojson"
+                  className="btn-secondary text-sm justify-center"
+                  ariaLabel={`Descargar metadatos ${L.title}`}
+                >
+                  <FileJson size={14}/> Metadatos JSON
+                </DataDownloadGate>
                 <Link href="/visor" className="btn-secondary text-sm justify-center">
                   <Map size={14}/> Abrir en visor
                 </Link>
+              </div>
+              <div className="mt-2 text-[11px] text-[var(--text-muted)]">
+                🔒 Toda descarga requiere registro conforme <strong>LOPDP Ecuador</strong> (datos tratados con fines estadísticos y de investigación, como acordado con el usuario final).
               </div>
             </div>
           ))}

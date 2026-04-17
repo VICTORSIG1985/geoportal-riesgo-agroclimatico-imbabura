@@ -62,7 +62,7 @@ export async function reverseGeocode(lat: number, lon: number): Promise<{ place:
 }
 
 // Envía el registro al FS público (addFeatures anónimo)
-export async function submitRegistro(r: RegistroLocal, tipo: "script" | "ficha" | "visor" | "api", nombreArchivo?: string): Promise<boolean> {
+export async function submitRegistro(r: RegistroLocal, tipo: "script" | "ficha" | "visor" | "api" | "geojson", nombreArchivo?: string): Promise<boolean> {
   const feature = {
     geometry: { x: r.lon, y: r.lat, spatialReference: { wkid: 4326 } },
     attributes: {

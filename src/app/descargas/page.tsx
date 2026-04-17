@@ -48,9 +48,9 @@ export default function DescargasPage() {
       <PageHero
         title="Descargas — Código fuente por fase"
         subtitle="22 scripts Python del pipeline científico, publicados para trazabilidad y replicabilidad. Adapte las rutas de entrada y podrá reproducir el estudio."
-        image="wm_cuicocha.jpg"
+        image="wm_mojanda.jpg"
         overlayColor="rgba(31,95,168,0.4)"
-        credit="Imagen: Laguna de Cuicocha · Wikimedia Commons · CC BY-SA"
+        credit="Imagen: Lagunas de Mojanda (Otavalo) — Wikimedia Commons · CC BY-SA"
       />
 
       <section className="container-prose py-8">

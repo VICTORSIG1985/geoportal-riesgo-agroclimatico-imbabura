@@ -177,9 +177,9 @@ Abajo tienes preguntas sugeridas por categoría para empezar.`
       <PageHero
         title="Asistente IA del Geoportal"
         subtitle="Respuestas basadas en el manuscrito sometido a Natural Hazards (Pinto Páez, 2026). Modo local con 30+ preguntas pre-indexadas o generación con Claude API."
-        image="imbabura_geoparque_slide2.png"
+        image="wm_cayambe.jpg"
         overlayColor="rgba(79,70,229,0.38)"
-        credit="Imagen: Geoparque Mundial UNESCO Imbabura · geoparque.imbabura.gob.ec"
+        credit="Imagen: Nevado Cayambe desde Imbabura — Wikimedia Commons · CC BY-SA"
       />
 
       <section className="container-prose py-10">

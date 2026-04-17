@@ -4,6 +4,7 @@ import { TOP10, EXPOSICION, PERDIDA_APTITUD, CULTIVOS } from "@/data/ranking";
 import { PRIORITY_COLORS } from "@/data/config";
 import IRChart from "@/components/IRChart";
 import { TrendingUp, Target, Wheat, Download } from "lucide-react";
+import PageHero from "@/components/PageHero";
 
 export default function ResultadosPage() {
   const [cultSel, setCultSel] = useState("papa");
@@ -11,15 +12,14 @@ export default function ResultadosPage() {
 
   return (
     <>
-      <section className="bg-[var(--accent-3)] text-white py-14">
-        <div className="container-prose">
-          <h1 className="text-white mb-3">Resultados</h1>
-          <p className="text-xl opacity-90 max-w-3xl">
-            Principales hallazgos de la investigación: ranking parroquial, IR por cultivo y escenario, exposición agrícola
-            y pérdida de aptitud climática.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Resultados"
+        subtitle="Principales hallazgos de la investigación: ranking parroquial, IR por cultivo y escenario, exposición agrícola y pérdida de aptitud climática."
+        image="wm_san_pablo_lago.jpg"
+        overlayColor="rgba(239,138,98,0.72)"
+        accent="#FFFFFF"
+        credit="Imagen: San Pablo del Lago (Otavalo) · Wikimedia Commons · CC BY-SA"
+      />
 
       <section className="container-prose py-10">
         <div className="grid md:grid-cols-4 gap-4">

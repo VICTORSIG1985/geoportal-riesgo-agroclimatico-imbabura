@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { FIGURES, GROUPS, figureUrl, Figure } from "@/data/figures";
 import { X, Download } from "lucide-react";
+import PageHero from "@/components/PageHero";
 
 export default function Galeria() {
   const [group, setGroup] = useState<string>("Todos");
@@ -9,14 +10,13 @@ export default function Galeria() {
   const shown = group === "Todos" ? FIGURES : FIGURES.filter(f => f.group === group);
   return (
     <>
-      <section className="bg-[var(--primary)] text-white py-14">
-        <div className="container-prose">
-          <h1 className="text-white mb-3">Galería Científica</h1>
-          <p className="text-xl opacity-90 max-w-3xl">
-            60 figuras cartográficas derivadas de la investigación, organizadas por grupo temático. Todas públicas en ArcGIS Online.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Galería Científica"
+        subtitle="60 figuras cartográficas derivadas de la investigación, organizadas por 6 grupos temáticos. Todas públicas en ArcGIS Online."
+        image="imbabura_geoparque_slide2.png"
+        overlayColor="rgba(107,78,155,0.72)"
+        credit="Imagen: Geoparque Mundial UNESCO Imbabura · Fuente: geoparque.imbabura.gob.ec · Elaboración: Prefectura de Imbabura"
+      />
 
       <section className="container-prose py-6 sticky top-[64px] bg-[var(--bg)] z-10 border-b border-[var(--border)]">
         <div className="flex flex-wrap gap-2">

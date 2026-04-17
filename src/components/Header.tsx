@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { MENU, SITE } from "@/data/config";
 import { Menu, X } from "lucide-react";
+import { asset } from "@/lib/assets";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -11,9 +12,9 @@ export default function Header() {
       <div className="container-prose flex items-center justify-between py-3">
         <Link href="/" className="flex items-center gap-3 no-underline text-white">
           <img
-            src={process.env.NEXT_PUBLIC_BASE_PATH ? `${process.env.NEXT_PUBLIC_BASE_PATH}/logo.png` : "/logo.png"}
+            src={asset("/logo.png")}
             alt="Geoportal Riesgo Agroclimático — Logo"
-            className="w-12 h-12 rounded-lg bg-white object-contain p-1"
+            className="w-12 h-12 rounded-lg bg-white object-contain p-1 flex-shrink-0"
           />
           <div className="leading-tight">
             <div className="text-lg font-bold">Geoportal Riesgo Agroclimático</div>

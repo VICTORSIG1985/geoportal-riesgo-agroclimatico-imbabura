@@ -1,75 +1,155 @@
-// Base de conocimiento — Q&A pre-indexadas del manuscrito para el asistente
-export interface KBEntry { q: string; a: string; tags: string[]; }
+// Base de conocimiento del manuscrito Pinto Páez (2026) — Natural Hazards.
+// 30+ entradas pre-indexadas (RAG local).
+
+export interface KBEntry { q: string; a: string; tags: string[]; category?: string; }
 
 export const KB: KBEntry[] = [
-  {
-    q: "¿Qué evalúa la investigación?",
-    a: "La investigación evalúa el riesgo agroclimático integrado de cuatro cultivos andinos (papa, maíz, fréjol, quinua) en las 42 parroquias de Imbabura, Ecuador. Combina un Modelo de Distribución de Especies entrenado con Random Forest (16 índices agroclimáticos; AUC 0,804-0,871) con una Red Bayesiana de 7 nodos para obtener un Índice de Riesgo compuesto (IR) bajo 9 escenarios climáticos CMIP6 (SSP1-2.6, SSP3-7.0, SSP5-8.5 × 3 horizontes).",
-    tags: ["objetivo", "resumen", "pipeline"]
-  },
-  {
-    q: "¿Qué cultivos se analizan?",
-    a: "Se analizan cuatro cultivos andinos: papa (Solanum tuberosum), maíz (Zea mays), fréjol (Phaseolus vulgaris) y quinua (Chenopodium quinoa). Cada uno tiene un modelo RF independiente con umbrales fisiológicos específicos (papa >25°C, fréjol >30°C, quinua >32°C, maíz >35°C).",
-    tags: ["cultivos", "papa", "maíz", "fréjol", "quinua"]
-  },
-  {
-    q: "¿Cuál es el hallazgo principal?",
-    a: "Bajo el escenario SSP5-8.5 al 2061-2080, el IR medio parroquial va de 0,350 en Imbaya a 0,689 en García Moreno — un factor de 1,97×. Esta diferenciación territorial solo es visible a escala parroquial. En 39 de las 42 parroquias, al menos un cultivo acumula ΔIR > 0,10 entre 2021-2040 y 2061-2080.",
-    tags: ["resultado", "IR", "priorización"]
-  },
-  {
-    q: "¿Cuáles son las parroquias prioritarias?",
-    a: "El Top 10 bajo SSP5-8.5 2061-2080: 1) García Moreno (IR 0,689, 4 cultivos en alto riesgo), 2) Seis de Julio de Cuellaje (0,657), 3) Lita, 4) Selva Alegre, 5) La Carolina, 6) Peñaherrera, 7) Apuela, 8) Vacas Galindo, 9) Ambuquí, 10) Plaza Gutiérrez. Cotacachi concentra 6 de las 10 prioridades (zona de Intag).",
-    tags: ["ranking", "top 10", "Cotacachi", "Intag"]
-  },
-  {
-    q: "¿Cómo funciona la Red Bayesiana?",
-    a: "La Red Bayesiana tiene 7 nodos y 6 aristas en 3 niveles. Nodos raíz: Peligro_Deficit, Peligro_Termico, Peligro_Sequia, Exposicion, Susceptibilidad_Agroclimática. Nodo intermedio: Peligro (con regla de daño máximo: Alto si algún subpeligro es Alto). Nodo objetivo: Riesgo. El IR se calcula como 0·P(Bajo) + 0,5·P(Medio) + 1·P(Alto). Se implementó con pgmpy v0.1.25.",
-    tags: ["metodología", "red bayesiana", "DAG", "IR"]
-  },
-  {
-    q: "¿Qué métricas tienen los modelos Random Forest?",
-    a: "Con validación cruzada espacial (k=5, bloques 2° lat): Papa AUC=0,871, TSS=0,603, OOB=0,169. Quinua AUC=0,867, TSS=0,614. Fréjol AUC=0,859, TSS=0,574. Maíz AUC=0,804, TSS=0,511, OOB=0,252. Los 4 modelos superan los umbrales (AUC≥0,75, TSS≥0,50). La variable más importante por cultivo coincide con el mecanismo fisiológico documentado.",
-    tags: ["metodología", "random forest", "AUC", "TSS", "desempeño"]
-  },
-  {
-    q: "¿Cuál es el rango de la exposición agrícola?",
-    a: "Superficie cosechada total: 10.706,2 ha. Maíz domina con 7.681,4 ha (71,7%), seguido por fréjol 2.316,9 ha (21,6%) y papa 707,9 ha (6,6%). Lita, San Miguel de Ibarra y La Merced de Buenos Aires concentran el 31,1% provincial. Para quinua: ESPAC 2024 reporta 18,36 ha en toda Imbabura, repartidas uniformemente como supuesto de trabajo (estimación exploratoria).",
-    tags: ["exposición", "MapSPAM", "hectáreas"]
-  },
-  {
-    q: "¿Qué datos climáticos se usan?",
-    a: "BASD-CMIP6-PE (Fernandez-Palomino et al. 2024) con corrección de sesgo ISIMIP3BASD v2.5, usando PISCO y RAIN4PE como referencias observacionales. Cobertura 1981-2100 a 0,1° (~10 km). Ensemble de 10 MCG (CanESM5, IPSL-CM6A-LR, UKESM1-0-LL, CNRM-CM6-1, CNRM-ESM2-1, MIROC6, GFDL-ESM4, MRI-ESM2-0, MPI-ESM1-2-HR, EC-Earth3). 3 SSPs × 3 horizontes.",
-    tags: ["datos climáticos", "CMIP6", "BASD"]
-  },
-  {
-    q: "¿Qué limitaciones tiene el estudio?",
-    a: "Seis limitaciones: 1) Resolución ~10 km, no resuelve microclimas de quebrada. 2) MapSPAM es proxy estadística, no catastro. 3) Quinua es exploratoria (18,36 ha distribuidas uniformemente). 4) TPC de conocimiento experto (pero ρ Spearman ≥ 0,91 confirma robustez). 5) Sin validación in situ. 6) Conservatismo de nicho — puede sobreestimar pérdidas si se desarrollan variedades más tolerantes.",
-    tags: ["limitaciones", "incertidumbre"]
-  },
-  {
-    q: "¿Cómo descargo los datos?",
-    a: "Los datos están disponibles públicamente como 3 Feature Services REST en ArcGIS Online USGP-EC: FL_Parroquias_Base_Imbabura_42 (42 polígonos), FL_Riesgo_Parroquial_Long_1512 (1.512 inferencias) y FL_Priorizacion_Final_Imbabura_42 (ranking). Se pueden consumir desde ArcGIS Pro, QGIS, R o Python, o descargar como GeoJSON/Shapefile/FGDB. Código fuente: GitHub VICTORSIG1985/agroclimatic-risk-imbabura. DOI Zenodo: 10.5281/zenodo.19288559.",
-    tags: ["datos", "descarga", "GitHub", "Zenodo", "API"]
-  },
-  {
-    q: "¿Por qué la quinua es exploratoria?",
-    a: "Porque ESPAC 2024 (INEC) reporta solo 18,36 hectáreas cosechadas de quinua en toda Imbabura. Esta superficie se distribuyó uniformemente entre las 42 parroquias como supuesto de trabajo. Los IR de quinua reflejan variación en peligro y susceptibilidad, pero no diferencias reales de exposición entre parroquias. Además la muestra GBIF es limitada (n=140 registros, 15 parroquias con cobertura). Por eso sus valores son indicativos a escala provincial, no territorial.",
-    tags: ["quinua", "limitación", "exposición"]
-  },
-  {
-    q: "¿Qué cultivo es más estable frente al cambio climático?",
-    a: "El fréjol es el más estable: ΔIR ≤ +0,5% en todos los escenarios y horizontes. Mantiene IR ~0,44 en todas las combinaciones. Esto es coherente con la resiliencia documentada de leguminosas andinas (Altieri y Nicholls 2017). El fréjol se menciona como cultivo de diversificación adaptativa en 38 de las 42 fichas parroquiales (90,5%).",
-    tags: ["fréjol", "resiliencia", "adaptación"]
-  },
-  {
-    q: "¿Qué SSPs se proyectan?",
-    a: "Tres Trayectorias Socioeconómicas Compartidas: SSP1-2.6 (mitigación sostenida), SSP3-7.0 (rivalidad regional, emisiones altas), SSP5-8.5 (fósil intensivo, peor caso). En 3 horizontes: 2021-2040, 2041-2060, 2061-2080. Total 9 combinaciones × 42 parroquias × 4 cultivos = 1.512 inferencias.",
-    tags: ["escenarios", "SSP", "horizontes"]
-  },
-  {
-    q: "¿Qué licencia tienen los datos?",
-    a: "Todos los productos del geoportal (Feature Services, PDFs, figuras, código y metadatos) están publicados bajo licencia Creative Commons Atribución 4.0 Internacional (CC BY 4.0). Uso libre con cita obligatoria: Pinto Páez, V.H. (2026) DOI 10.5281/zenodo.19288559.",
-    tags: ["licencia", "cita"]
-  },
+  // ============ OBJETIVO Y ALCANCE ============
+  { category: "Objetivo", q: "¿Qué evalúa la investigación?",
+    a: "Evalúa el riesgo agroclimático integrado de cuatro cultivos andinos (papa, maíz, fréjol, quinua) en las 42 parroquias de Imbabura. Combina un Modelo de Distribución de Especies (RF; 16 índices agroclimáticos; AUC 0,804–0,871) con una Red Bayesiana de 7 nodos para obtener un Índice de Riesgo (IR) bajo 9 escenarios CMIP6 (SSP1-2.6, SSP3-7.0, SSP5-8.5 × 3 horizontes).",
+    tags: ["objetivo", "resumen", "pipeline"] },
+  { category: "Objetivo", q: "¿Cuáles son los 4 objetivos específicos?",
+    a: "(1) Caracterizar la aptitud climática con SDM-RF sobre 16 índices agroclimáticos BASD-CMIP6-PE; (2) cuantificar la exposición agrícola parroquial (MapSPAM v2r0 + ESPAC 2024); (3) integrar peligro–exposición–susceptibilidad con una Red Bayesiana → 1.512 IR; (4) evaluar la diferenciación espacial del riesgo parroquial como demostración de un pipeline transferible.",
+    tags: ["objetivos", "diseño"] },
+  { category: "Objetivo", q: "¿Para qué usuarios está pensado?",
+    a: "Para GADs parroquiales y cantonales de Imbabura, MAG, MAATE, SENAGUA, cooperación técnica, academia y agricultores. Proporciona 42 fichas técnicas listas para PDOT y priorización territorial.",
+    tags: ["audiencia", "GAD", "PDOT"] },
+
+  // ============ ÁREA DE ESTUDIO ============
+  { category: "Área de estudio", q: "¿Dónde se sitúa Imbabura?",
+    a: "Sierra norte del Ecuador (0°04′–0°58′N; 77°43′–79°22′O). 4.599 km² repartidos en 6 cantones y 42 parroquias. Altitud 200 m s.n.m. (subtropical noroccidental) a 4.939 m s.n.m. (páramos del Cayambe).",
+    tags: ["área", "Imbabura", "geografía"] },
+  { category: "Área de estudio", q: "¿Qué cantones integra la provincia?",
+    a: "Antonio Ante (5 parroquias), Cotacachi (9), Ibarra (8), Otavalo (10), Pimampiro (4), San Miguel de Urcuquí (6). Total: 42 parroquias.",
+    tags: ["cantones", "Imbabura"] },
+  { category: "Área de estudio", q: "¿Cómo es el clima de Imbabura?",
+    a: "Muy heterogéneo. Zona de Intag > 2.000 mm/año. Valle del Chota semiárido < 500 mm/año. Índice de aridez provincial 1,03 (subhúmedo, PNUMA 1992). Rango altitudinal dicta microclimas contrastantes.",
+    tags: ["clima", "Intag", "Chota", "aridez"] },
+
+  // ============ CULTIVOS ============
+  { category: "Cultivos", q: "¿Qué cultivos se analizan?",
+    a: "Cuatro cultivos andinos: papa (Solanum tuberosum), maíz (Zea mays), fréjol (Phaseolus vulgaris) y quinua (Chenopodium quinoa). Umbrales fisiológicos: papa >25°C (CIP 2020), fréjol >30°C (Gross y Kigel 1994), quinua >32°C (Jacobsen 2003), maíz >35°C (Sánchez et al. 2014).",
+    tags: ["cultivos", "papa", "maíz", "fréjol", "quinua", "umbrales"] },
+  { category: "Cultivos", q: "¿Dónde crecen en Imbabura?",
+    a: "Papa entre 2.800 y 3.800 m s.n.m. Maíz y fréjol en valles interandinos (1.800–2.600 m s.n.m.). Quinua en zonas de transición. Distribución muy dependiente del piso altitudinal.",
+    tags: ["cultivos", "altitud", "distribución"] },
+  { category: "Cultivos", q: "¿Cuál es el cultivo más estable?",
+    a: "Fréjol: ΔIR ≤ +0,5% en todos los escenarios, IR ≈ 0,44 estable. Coherente con la resiliencia documentada de leguminosas andinas (Altieri y Nicholls 2017). Se recomienda como cultivo de diversificación adaptativa en 38 de 42 fichas parroquiales (90,5%).",
+    tags: ["fréjol", "resiliencia", "adaptación"] },
+  { category: "Cultivos", q: "¿Cuál es el cultivo con mayor riesgo absoluto?",
+    a: "Papa: IR 0,596 bajo SSP5-8.5 al 2061–2080 — el más alto. La variable más importante es dias_estres_papa_anual (ΔAUC 0,021±0,003), coherente con la inhibición de la tuberización >25°C (CIP 2020).",
+    tags: ["papa", "riesgo", "estrés térmico"] },
+  { category: "Cultivos", q: "¿Por qué la quinua es exploratoria?",
+    a: "ESPAC 2024 reporta solo 18,36 ha de quinua en toda Imbabura, distribuidas uniformemente entre 42 parroquias como supuesto. La muestra GBIF es limitada (n=140, 15 parroquias con cobertura). Los IR reflejan variación en peligro/susceptibilidad, no diferencias reales de exposición. Son indicativos provinciales, no territoriales.",
+    tags: ["quinua", "limitación", "exposición", "ESPAC"] },
+
+  // ============ ESCENARIOS CLIMÁTICOS ============
+  { category: "Escenarios", q: "¿Qué escenarios SSP se proyectan?",
+    a: "SSP1-2.6 (mitigación sostenida, optimista), SSP3-7.0 (rivalidad regional, emisiones altas), SSP5-8.5 (fósil intensivo, peor caso). En 3 horizontes: 2021–2040, 2041–2060, 2061–2080. Total 9 combinaciones.",
+    tags: ["escenarios", "SSP", "horizontes", "CMIP6"] },
+  { category: "Escenarios", q: "¿Qué es BASD-CMIP6-PE?",
+    a: "Conjunto climático con corrección de sesgo para Perú y Ecuador (Fernandez-Palomino et al. 2024), ISIMIP3BASD v2.5 (Lange 2019), calibrado contra PISCO y RAIN4PE. Cobertura 1981–2100 a 0,1° (~10 km). Ensemble de 10 MCG con pesos iguales.",
+    tags: ["datos climáticos", "CMIP6", "BASD", "corrección sesgo"] },
+  { category: "Escenarios", q: "¿Qué MCG se usaron?",
+    a: "10 modelos de circulación general: CanESM5, IPSL-CM6A-LR, UKESM1-0-LL, CNRM-CM6-1, CNRM-ESM2-1, MIROC6, GFDL-ESM4, MRI-ESM2-0, MPI-ESM1-2-HR y EC-Earth3, con pesos iguales (Knutti 2010).",
+    tags: ["MCG", "ensemble", "modelos"] },
+  { category: "Escenarios", q: "¿Cuál es la dispersión intermodelo?",
+    a: "Baja — CV < 8% en los 4 cultivos bajo SSP5-8.5 2061–2080. Ningún MCG individual domina las estimaciones. Quinua tiene la mayor dispersión (CV 7,3%), esperable por ser el cultivo con más cambios proyectados.",
+    tags: ["incertidumbre", "CV", "ensemble"] },
+
+  // ============ METODOLOGÍA ============
+  { category: "Metodología", q: "¿Cómo funciona la Red Bayesiana?",
+    a: "7 nodos, 6 aristas, 3 niveles. Raíz: Peligro_Deficit, Peligro_Termico, Peligro_Sequia, Exposicion, Susceptibilidad_Agroclimática. Intermedio: Peligro (regla de daño máximo → Alto si algún subpeligro es Alto). Objetivo: Riesgo. IR = 0·P(Bajo) + 0,5·P(Medio) + 1·P(Alto). pgmpy v0.1.25.",
+    tags: ["metodología", "red bayesiana", "DAG", "IR"] },
+  { category: "Metodología", q: "¿Por qué 'Susceptibilidad Agroclimática' y no 'Vulnerabilidad'?",
+    a: "Porque el nodo representa sensibilidad biofísica (operacionalizada como 1 − aptitud RF), no la vulnerabilidad socioeconómica del IPCC AR6 — que requeriría capacidad adaptativa e indicadores institucionales no disponibles a esta resolución. Es una decisión de rigor terminológico.",
+    tags: ["terminología", "vulnerabilidad", "susceptibilidad"] },
+  { category: "Metodología", q: "¿Qué métricas tienen los modelos Random Forest?",
+    a: "Validación cruzada espacial k=5 con bloques de 2° latitud: Papa AUC=0,871, TSS=0,603, OOB=0,169. Quinua AUC=0,867, TSS=0,614. Fréjol AUC=0,859, TSS=0,574. Maíz AUC=0,804, TSS=0,511. Los 4 superan los umbrales (AUC≥0,75 Fielding&Bell 1997; TSS≥0,50 Allouche et al. 2006).",
+    tags: ["random forest", "AUC", "TSS", "desempeño"] },
+  { category: "Metodología", q: "¿Cuáles son las 5 fases del pipeline?",
+    a: "(1) Preparación climática BASD-CMIP6-PE; (2) 16 índices agroclimáticos; (3) Exposición agrícola (MapSPAM+ESPAC); (4) SDM con Random Forest k=5; (5) Integración bayesiana → 1.512 IR + 42 fichas. Total: 22 scripts Python.",
+    tags: ["pipeline", "fases", "scripts"] },
+  { category: "Metodología", q: "¿Qué variables son las más importantes para los RF?",
+    a: "Papa: dias_estres_papa_anual (ΔAUC 0,021±0,003). Maíz, fréjol, quinua: dias_secos_anual (ΔAUC 0,049; 0,020; 0,015 respectivamente). Las variables líder coinciden con los mecanismos fisiológicos documentados.",
+    tags: ["variables", "importancia", "permutación"] },
+  { category: "Metodología", q: "¿Cómo se calibró el Random Forest?",
+    a: "scikit-learn v1.3. n_estimators=500, max_features=√p, min_samples_leaf=5, class_weight=balanced, random_state=42. Ratio presencias:pseudoausencias 1:1, elevado a 1,2:1–1,7:1 tras filtrar registros sin cobertura climática (compensado con class_weight).",
+    tags: ["random forest", "hiperparámetros", "calibración"] },
+  { category: "Metodología", q: "¿Qué datos de ocurrencias se usaron?",
+    a: "2.681 registros GBIF rarefaccionados a grilla 0,1°×0,1°: papa 558, maíz 1.359, fréjol 624, quinua 140. Área de calibración: Ecuador, Perú, Bolivia, Colombia. De los 2.681, 1.593 (59,4%) tuvieron cobertura climática completa en BASD-CMIP6-PE.",
+    tags: ["GBIF", "ocurrencias", "rarefacción"] },
+  { category: "Metodología", q: "¿Qué es ET0 Hargreaves-Samani?",
+    a: "Evapotranspiración de referencia: ET₀ = 0,0023 × Ra × (Tmedia + 17,8) × (Tmax − Tmin)^0,5. Se usa porque BASD-CMIP6-PE no incluye viento, humedad ni radiación (necesarias para Penman-Monteith). P − ET₀ define déficit hídrico.",
+    tags: ["ET0", "evapotranspiración", "Hargreaves"] },
+
+  // ============ RESULTADOS ============
+  { category: "Resultados", q: "¿Cuál es el hallazgo principal?",
+    a: "Bajo SSP5-8.5 al 2061–2080, el IR medio parroquial va de 0,350 en Imbaya a 0,689 en García Moreno — factor 1,97×. Esta diferenciación territorial solo es visible a escala parroquial. En 39 de 42 parroquias al menos un cultivo acumula ΔIR>0,10 entre 2021–2040 y 2061–2080.",
+    tags: ["resultado", "IR", "diferenciación"] },
+  { category: "Resultados", q: "¿Cuáles son las parroquias prioritarias?",
+    a: "Top 10 bajo SSP5-8.5 2061–2080: 1) García Moreno (IR 0,689), 2) Seis de Julio de Cuellaje (0,657), 3) Lita, 4) Selva Alegre, 5) La Carolina, 6) Peñaherrera, 7) Apuela, 8) Vacas Galindo, 9) Ambuquí, 10) Plaza Gutiérrez. Cotacachi concentra 6 de las 10 (zona de Intag).",
+    tags: ["ranking", "top 10", "Cotacachi", "Intag"] },
+  { category: "Resultados", q: "¿Cuál es la distribución de prioridades?",
+    a: "2 Muy Alta (IR ≥ 0,65), 5 Alta (0,55–0,65), 22 Alerta (0,45–0,55), 3 Monitoreo (0,40–0,45), 10 Favorable (IR < 0,40). Todas bajo SSP5-8.5 2061–2080.",
+    tags: ["distribución", "categorías", "priorización"] },
+  { category: "Resultados", q: "¿Cuál es el IR medio por cultivo?",
+    a: "Bajo SSP5-8.5 2061–2080 (promedio provincial): Papa 0,596 (más alto), Maíz 0,514, Fréjol 0,441, Quinua 0,412. Fréjol es el más estable (ΔIR ≤ +0,5%). Quinua tiene el mayor incremento relativo (+49,3%, provincial exploratorio).",
+    tags: ["IR provincial", "cultivos", "SSP585"] },
+  { category: "Resultados", q: "¿Cuál es la exposición agrícola total?",
+    a: "10.706,2 ha de papa+maíz+fréjol (MapSPAM 2020 v2r0). Maíz 7.681,4 ha (71,7%), Fréjol 2.316,9 ha (21,6%), Papa 707,9 ha (6,6%). Lita, San Miguel de Ibarra y La Merced de Buenos Aires concentran 31,1% provincial. Quinua: solo 18,36 ha (ESPAC 2024).",
+    tags: ["exposición", "hectáreas", "MapSPAM"] },
+  { category: "Resultados", q: "¿Qué pérdida de aptitud se proyecta?",
+    a: "Bajo SSP5-8.5 al 2061–2080: quinua −16,9% (exploratorio provincial), papa −14,8%, maíz −9,6%, fréjol −4,4%. Bajo SSP1-2.6 ningún cultivo supera −3,4%. El orden refleja tolerancia térmica y respuesta a déficit hídrico.",
+    tags: ["aptitud", "pérdida", "proyecciones"] },
+  { category: "Resultados", q: "¿Qué pasa en la zona de Intag?",
+    a: "La zona de Intag (Cotacachi) concentra 6 de las 10 parroquias prioritarias. García Moreno tiene los 4 cultivos simultáneamente en categoría Alto. Confluyen estacionalidad marcada de precipitación, temperaturas cerca de umbrales fisiológicos y exposición significativa de maíz y fréjol.",
+    tags: ["Intag", "Cotacachi", "García Moreno"] },
+  { category: "Resultados", q: "¿Cuántas inferencias IR se generaron?",
+    a: "1.512 inferencias IR sin valores nulos: 42 parroquias × 4 cultivos × 3 SSP × 3 horizontes. Cobertura completa porque todas las parroquias tienen al menos un píxel climático asignado (por media espacial o vecino más próximo, distancia máxima 6,4 km).",
+    tags: ["1512", "inferencias", "completitud"] },
+
+  // ============ ROBUSTEZ ============
+  { category: "Robustez", q: "¿Qué tan estable es el ranking?",
+    a: "Muy estable: ρ de Spearman ≥ 0,91 bajo perturbación ±15 pp de las TPC (renormalizando símplex). El ranking relativo resiste incluso cambios sustanciales en la parametrización subjetiva. Las conclusiones territoriales son robustas.",
+    tags: ["robustez", "sensibilidad", "Spearman"] },
+  { category: "Robustez", q: "¿Hay incertidumbre intermodelo?",
+    a: "Baja: CV < 8% en los 4 cultivos bajo SSP5-8.5 2061–2080. Quinua presenta la mayor (CV 7,3%). Ningún MCG individual domina las estimaciones.",
+    tags: ["CV", "incertidumbre", "MCG"] },
+
+  // ============ LIMITACIONES ============
+  { category: "Limitaciones", q: "¿Qué limitaciones tiene el estudio?",
+    a: "Seis: (1) Resolución ~10 km no resuelve microclimas. (2) MapSPAM es proxy estadística, no catastro. (3) Quinua exploratoria (18,36 ha distribuidas uniformemente). (4) TPC de conocimiento experto (pero ρ≥0,91 confirma robustez). (5) Sin validación in situ (carácter prospectivo). (6) Conservatismo de nicho — posible sobreestimación si aparecen variedades más tolerantes.",
+    tags: ["limitaciones", "incertidumbre"] },
+  { category: "Limitaciones", q: "¿Los valores absolutos del IR son confiables?",
+    a: "La inferencia válida es comparativa entre parroquias (ranking). Los valores absolutos son aproximaciones operativas a mesoescala, no probabilidades empíricas de pérdida agrícola. Diferencias entre parroquias con IR similar no son confiables dado el raster ~10 km.",
+    tags: ["IR absoluto", "ranking", "interpretación"] },
+
+  // ============ ACCESO A DATOS ============
+  { category: "Datos", q: "¿Cómo descargo los datos?",
+    a: "3 Feature Services REST públicos en ArcGIS Online USGP-EC: FL_Parroquias_Base_Imbabura_42 (42 polígonos con ficha_url), FL_Riesgo_Parroquial_Long_1512 (1.512 inferencias), FL_Priorizacion_Final_Imbabura_42 (ranking). Consumibles desde ArcGIS Pro, QGIS, R, Python. Código: GitHub VICTORSIG1985/agroclimatic-risk-imbabura. DOI: 10.5281/zenodo.19288559.",
+    tags: ["datos", "descarga", "API", "GitHub", "Zenodo"] },
+  { category: "Datos", q: "¿Qué es una ficha parroquial?",
+    a: "PDF público por parroquia (42 en total) con: IR medio y máximo bajo 9 escenarios, cultivo más vulnerable, mensaje de priorización y recomendación operativa para el GAD. Accesibles en /fichas y vía campo ficha_url del FL_Parroquias_Base.",
+    tags: ["fichas", "PDF", "GAD"] },
+  { category: "Datos", q: "¿Qué licencia tienen los datos?",
+    a: "Creative Commons Atribución 4.0 Internacional (CC BY 4.0). Uso libre con cita obligatoria: Pinto Páez, V. H. (2026). DOI 10.5281/zenodo.19288559. Feature Services son públicos pero en modo solo-lectura.",
+    tags: ["licencia", "cita", "CC BY"] },
+
+  // ============ REPRODUCIBILIDAD ============
+  { category: "Reproducibilidad", q: "¿Cómo replico el estudio?",
+    a: "Descargue los 22 scripts Python desde /descargas (sanitizados por fase), configure sus propias rutas de entrada/salida y credenciales. El dataset autoritativo (riesgo_parroquial_20260226_172751.csv) está en Zenodo. El pipeline es transferible a otras provincias cubiertas por BASD-CMIP6-PE adaptando insumos territoriales.",
+    tags: ["reproducibilidad", "transferencia", "scripts"] },
+  { category: "Reproducibilidad", q: "¿Qué dependencias necesito?",
+    a: "Python 3.10+. Paquetes: numpy, pandas, geopandas, rasterio, xarray, scikit-learn 1.3 (RF), pgmpy 0.1.25 (Red Bayesiana), exactextract (zonal stats), matplotlib/seaborn para figuras. Para descarga CMIP6: siga instrucciones del Script 01.",
+    tags: ["dependencias", "Python", "reproducibilidad"] },
+  { category: "Reproducibilidad", q: "¿Hay DOI permanente?",
+    a: "Sí: https://doi.org/10.5281/zenodo.19288559 en Zenodo. Incluye código completo, documentación metodológica (21 documentos ISO 19115), dataset autoritativo y manuscrito en revisión.",
+    tags: ["DOI", "Zenodo", "archivo"] },
+];
+
+export const KB_CATEGORIES = [
+  "Objetivo", "Área de estudio", "Cultivos", "Escenarios",
+  "Metodología", "Resultados", "Robustez", "Limitaciones",
+  "Datos", "Reproducibilidad",
 ];

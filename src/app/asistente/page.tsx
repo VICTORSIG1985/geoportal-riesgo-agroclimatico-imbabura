@@ -1,46 +1,47 @@
 "use client";
-import { useEffect, useState } from "react";
-import { KB } from "@/data/kb";
-import { Bot, Send, Sparkles, MessageCircle, Key, Lock, CheckCircle2, AlertCircle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { KB, KB_CATEGORIES } from "@/data/kb";
+import { Bot, Send, Sparkles, MessageCircle, Key, Lock, CheckCircle2, AlertCircle, Database, HelpCircle } from "lucide-react";
+import PageHero from "@/components/PageHero";
 
-// RAG offline (fallback)
-function scoreEntry(query: string, kb: typeof KB[number]) {
-  const q = query.toLowerCase();
-  const qWords = q.split(/\s+/).filter(w => w.length > 2);
+function norm(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function tokenize(s: string): string[] {
+  return norm(s).split(/[^a-z0-9ñ]+/).filter(w => w.length > 2);
+}
+
+function scoreEntry(queryTokens: string[], kb: typeof KB[number]): number {
+  const qText = norm(kb.q);
+  const aText = norm(kb.a);
+  const tagsText = kb.tags.map(t => norm(t)).join(" ");
   let score = 0;
-  for (const w of qWords) {
-    if (kb.q.toLowerCase().includes(w)) score += 3;
-    if (kb.a.toLowerCase().includes(w)) score += 1;
-    if (kb.tags.some(t => t.toLowerCase().includes(w))) score += 2;
+  for (const w of queryTokens) {
+    if (qText.includes(w)) score += 5;
+    if (tagsText.includes(w)) score += 3;
+    if (aText.includes(w)) score += 1;
   }
   return score;
 }
-function retrieveContext(query: string, topK = 3) {
-  const ranked = KB.map(e => ({ e, s: scoreEntry(query, e) })).sort((a, b) => b.s - a.s);
-  return ranked.slice(0, topK).filter(r => r.s > 0).map(r => r.e);
+
+function retrieve(query: string, topK = 3) {
+  const toks = tokenize(query);
+  if (toks.length === 0) return [];
+  const ranked = KB.map(e => ({ e, s: scoreEntry(toks, e) })).sort((a, b) => b.s - a.s);
+  return ranked.filter(r => r.s >= 3).slice(0, topK);
 }
-
-interface Msg { role: "user" | "assistant"; text: string; sources?: string[]; provider?: "local" | "claude"; }
-
-const SUGERENCIAS = [
-  "¿Cuál es el hallazgo principal?",
-  "¿Qué métricas tienen los modelos Random Forest?",
-  "¿Cuáles son las parroquias prioritarias?",
-  "¿Por qué la quinua es exploratoria?",
-  "¿Cómo descargo los datos?",
-  "¿Qué cultivo es más estable?",
-];
 
 const SYSTEM_PROMPT = `Eres el asistente científico del Geoportal Riesgo Agroclimático de Imbabura (Pinto Páez, 2026, USGP), manuscrito sometido a Natural Hazards (Springer). Respondes en español, con rigor académico y tono profesional. Tus respuestas se basan EXCLUSIVAMENTE en la información del manuscrito y del sistema. Si el contexto no contiene la respuesta, indica honestamente que no hay información y sugiere consultar la página Resultados o Datos Abiertos. Nunca inventes números ni referencias. Cita métricas textuales del manuscrito cuando estén disponibles.`;
 
 async function askClaude(apiKey: string, model: string, query: string, context: typeof KB): Promise<string> {
-  const ctxText = context.map((c, i) => `[Fragmento ${i+1}] ${c.q}\n${c.a}`).join("\n\n");
+  const ctxText = context.map((c, i) => `[Fragmento ${i+1} · ${c.category}] ${c.q}\n${c.a}`).join("\n\n");
   const body = {
     model,
     max_tokens: 800,
     system: SYSTEM_PROMPT,
     messages: [
-      { role: "user", content: `Contexto extraído de la base de conocimiento del manuscrito:\n\n${ctxText}\n\nPregunta del usuario: ${query}\n\nResponde en español, citando datos específicos cuando existan.` }
+      { role: "user", content: `Contexto del manuscrito:\n\n${ctxText || "(sin contexto relevante)"}\n\nPregunta del usuario: ${query}\n\nResponde en español, citando datos específicos cuando existan en el contexto.` }
     ],
   };
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -61,24 +62,59 @@ async function askClaude(apiKey: string, model: string, query: string, context: 
   return data.content?.[0]?.text || "(respuesta vacía)";
 }
 
+interface Msg {
+  role: "user" | "assistant";
+  text: string;
+  related?: string[];
+  provider?: "local" | "claude" | "nomatch";
+  category?: string;
+}
+
+const NO_MATCH_LOCAL = `No encontré ninguna coincidencia para tu pregunta en la base de conocimiento local del geoportal.
+
+El **modo local** responde solo a preguntas relacionadas con la investigación (objetivos, cultivos, escenarios climáticos, metodología, Red Bayesiana, Random Forest, resultados, exposición, fichas parroquiales, datos abiertos, limitaciones, reproducibilidad).
+
+**Opciones:**
+- Usa las **preguntas sugeridas** abajo, agrupadas por categoría.
+- Configura tu **clave de Claude API** (arriba) para obtener respuestas generativas sobre cualquier tema del manuscrito.
+- Consulta las secciones **Resultados**, **Metodología** o **Datos Abiertos** del geoportal.`;
+
 export default function AsistentePage() {
   const [q, setQ] = useState("");
   const [chat, setChat] = useState<Msg[]>([{
     role: "assistant",
     provider: "local",
-    text: "Hola. Soy el asistente del Geoportal Riesgo Agroclimático de Imbabura. Respondo preguntas sobre la metodología, los cultivos, los escenarios, los resultados o cómo acceder a los datos. Todas mis respuestas se basan en el manuscrito sometido a Natural Hazards (Pinto Páez, 2026). Puedo responder en dos modos: (a) búsqueda local sobre 14 fragmentos pre-indexados (sin configuración, siempre disponible), o (b) generación con Claude API si configura su propia clave."
+    text: `Hola. Soy el asistente del Geoportal Riesgo Agroclimático de Imbabura (Pinto Páez, 2026, USGP).
+
+**Cómo funciono:**
+
+🔹 **Modo local (por defecto):** respondo únicamente preguntas pre-indexadas sobre la investigación. Tengo ${KB.length} respuestas verificadas textualmente del manuscrito, organizadas en ${KB_CATEGORIES.length} categorías. Si preguntas algo fuera de la base, te lo indicaré.
+
+🔹 **Modo Claude API (opcional):** si configuras tu clave de Anthropic, puedo responder preguntas libres usando los fragmentos como contexto. La clave se guarda solo en tu navegador.
+
+Abajo tienes preguntas sugeridas por categoría para empezar.`
   }]);
   const [busy, setBusy] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState("claude-haiku-4-5-20251001");
   const [showKeyUI, setShowKeyUI] = useState(false);
   const [keyStatus, setKeyStatus] = useState<"none" | "set" | "tested" | "failed">("none");
+  const [filterCat, setFilterCat] = useState<string | null>(null);
 
   useEffect(() => {
     const k = typeof window !== "undefined" ? window.localStorage.getItem("geoportal_anthropic_key") : null;
     const m = typeof window !== "undefined" ? window.localStorage.getItem("geoportal_anthropic_model") : null;
     if (k) { setApiKey(k); setKeyStatus("set"); }
     if (m) setModel(m);
+  }, []);
+
+  const suggestedByCategory = useMemo(() => {
+    const byCat: Record<string, typeof KB> = {};
+    for (const e of KB) {
+      const c = e.category || "Otros";
+      (byCat[c] ||= []).push(e);
+    }
+    return byCat;
   }, []);
 
   function saveKey() {
@@ -99,41 +135,52 @@ export default function AsistentePage() {
     setQ("");
     setBusy(true);
 
-    const ctx = retrieveContext(text, 3);
+    const hits = retrieve(text, 3);
 
+    // Modo Claude
     if (apiKey && keyStatus !== "failed") {
       try {
-        const answer = await askClaude(apiKey, model, text, ctx);
-        setChat(c => [...c, { role: "assistant", text: answer, provider: "claude", sources: ctx.map(s => s.q) }]);
+        const answer = await askClaude(apiKey, model, text, hits.map(h => h.e));
+        setChat(c => [...c, { role: "assistant", text: answer, provider: "claude", related: hits.map(h => h.e.q) }]);
         setKeyStatus("tested");
       } catch (e: any) {
         setKeyStatus("failed");
-        const fallback = ctx[0]?.a || "No hay coincidencias en la base de conocimiento local y la llamada a Claude falló. Consulte /resultados o /datos.";
-        setChat(c => [...c, { role: "assistant", text: `⚠️ Claude API falló (${e.message}). Respuesta local:\n\n${fallback}`, provider: "local", sources: ctx.map(s => s.q) }]);
+        const fallback = hits[0]?.e.a || NO_MATCH_LOCAL;
+        setChat(c => [...c, { role: "assistant", text: `⚠️ La llamada a Claude API falló (${e.message}). Respuesta del modo local:\n\n${fallback}`, provider: "local", related: hits.map(h => h.e.q) }]);
       } finally {
         setBusy(false);
       }
-    } else {
-      // Fallback: búsqueda local
-      const answer = ctx[0]?.a || "No encontré una respuesta específica en la base de conocimiento. Puede revisar Resultados o Datos Abiertos. También puede configurar su clave de Claude (arriba) para respuestas generativas sobre cualquier tema del manuscrito.";
-      setChat(c => [...c, { role: "assistant", text: answer, provider: "local", sources: ctx.map(s => s.q) }]);
-      setBusy(false);
+      return;
     }
+
+    // Modo local estricto
+    if (hits.length > 0) {
+      const best = hits[0].e;
+      setChat(c => [...c, {
+        role: "assistant",
+        text: best.a,
+        provider: "local",
+        category: best.category,
+        related: hits.slice(1).map(h => h.e.q)
+      }]);
+    } else {
+      setChat(c => [...c, { role: "assistant", text: NO_MATCH_LOCAL, provider: "nomatch" }]);
+    }
+    setBusy(false);
   }
+
+  const categories = KB_CATEGORIES.filter(c => suggestedByCategory[c]?.length);
+  const shownQuestions = filterCat ? (suggestedByCategory[filterCat] || []) : KB.slice(0, 12);
 
   return (
     <>
-      <section className="bg-indigo-700 text-white py-14">
-        <div className="container-prose">
-          <div className="flex items-center gap-4">
-            <Bot size={48} className="opacity-80"/>
-            <div>
-              <h1 className="text-white mb-2">Asistente IA del Geoportal</h1>
-              <p className="text-xl opacity-90">Respuestas basadas en el manuscrito sometido a <em>Natural Hazards</em> (Pinto Páez, 2026).</p>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        title="Asistente IA del Geoportal"
+        subtitle="Respuestas basadas en el manuscrito sometido a Natural Hazards (Pinto Páez, 2026). Modo local con 30+ preguntas pre-indexadas o generación con Claude API."
+        image="imbabura_geoparque_slide2.png"
+        overlayColor="rgba(79,70,229,0.78)"
+        credit="Imagen: Geoparque Mundial UNESCO Imbabura · geoparque.imbabura.gob.ec"
+      />
 
       <section className="container-prose py-10">
         <div className="max-w-3xl mx-auto">
@@ -141,7 +188,7 @@ export default function AsistentePage() {
           <div className="mb-5 card flex flex-wrap items-center gap-3">
             <Key size={18} className="text-indigo-600"/>
             <div className="text-sm flex-1">
-              {keyStatus === "none" && <>Modo actual: <strong>búsqueda local</strong> (14 fragmentos pre-indexados).</>}
+              {keyStatus === "none" && <>Modo actual: <strong>búsqueda local</strong> ({KB.length} preguntas pre-indexadas).</>}
               {keyStatus === "set" && <>Modo: <strong>Claude API</strong> configurada. Listo para usar.</>}
               {keyStatus === "tested" && <><CheckCircle2 size={14} className="inline text-green-600"/> Claude respondiendo correctamente.</>}
               {keyStatus === "failed" && <><AlertCircle size={14} className="inline text-red-600"/> Claude falló — volviendo a modo local.</>}
@@ -153,10 +200,10 @@ export default function AsistentePage() {
           </div>
           {showKeyUI && (
             <div className="mb-5 card border-2 border-indigo-300 bg-indigo-50">
-              <div className="flex items-center gap-2 mb-3 text-sm font-semibold"><Lock size={14}/> Configuración local (BYOK)</div>
+              <div className="flex items-center gap-2 mb-3 text-sm font-semibold"><Lock size={14}/> Configuración local (BYOK · Bring Your Own Key)</div>
               <p className="text-xs text-[var(--text-muted)] mb-3">
                 La clave se guarda <strong>solo en tu navegador</strong> (localStorage), nunca se envía a nuestro servidor.
-                Las peticiones van directo a <code>api.anthropic.com</code> desde tu browser. Obtén tu clave en {" "}
+                Las peticiones van directo a <code>api.anthropic.com</code> desde tu browser. Obtén tu clave en{" "}
                 <a href="https://console.anthropic.com/" target="_blank" rel="noopener" className="text-indigo-600 underline">console.anthropic.com</a>.
               </p>
               <div className="grid gap-3 text-sm">
@@ -186,23 +233,28 @@ export default function AsistentePage() {
             <div className="flex-1 p-5 space-y-4 overflow-y-auto max-h-[500px]">
               {chat.map((m, i) => (
                 <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[85%] rounded-xl p-3 ${
+                  <div className={`max-w-[88%] rounded-xl p-3 ${
                     m.role === "user" ? "bg-[var(--primary)] text-white" : "bg-[var(--bg)] text-[var(--text)]"
                   }`}>
                     {m.role === "assistant" && (
-                      <div className="flex items-center gap-1 text-xs text-indigo-600 font-semibold mb-1">
-                        <Sparkles size={12}/> Asistente
-                        {m.provider === "claude" && <span className="ml-2 bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">Claude</span>}
-                        {m.provider === "local" && <span className="ml-2 bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">Local RAG</span>}
+                      <div className="flex items-center gap-1 text-xs font-semibold mb-1 flex-wrap">
+                        <Sparkles size={12} className="text-indigo-600"/>
+                        <span className="text-indigo-600">Asistente</span>
+                        {m.provider === "claude" && <span className="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">Claude API</span>}
+                        {m.provider === "local" && <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">Local RAG</span>}
+                        {m.provider === "nomatch" && <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Sin coincidencia</span>}
+                        {m.category && <span className="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">{m.category}</span>}
                       </div>
                     )}
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.text}</p>
-                    {m.sources && m.sources.length > 1 && (
+                    <div className="text-sm leading-relaxed whitespace-pre-wrap">{m.text}</div>
+                    {m.related && m.related.length > 0 && (
                       <div className="mt-2 text-xs opacity-70 border-t pt-2">
-                        <strong>Preguntas relacionadas:</strong>
-                        <ul className="list-disc list-inside mt-1">
-                          {m.sources.slice(1).map((s, j) => (
-                            <li key={j} className="cursor-pointer hover:underline" onClick={() => send(s)}>{s}</li>
+                        <strong>Relacionadas:</strong>
+                        <ul className="mt-1 space-y-0.5">
+                          {m.related.map((s, j) => (
+                            <li key={j} className="cursor-pointer hover:underline flex items-start gap-1" onClick={() => send(s)}>
+                              <span>→</span><span>{s}</span>
+                            </li>
                           ))}
                         </ul>
                       </div>
@@ -219,24 +271,51 @@ export default function AsistentePage() {
             <div className="border-t border-[var(--border)] p-3 bg-white">
               <form onSubmit={e => { e.preventDefault(); send(q); }} className="flex gap-2">
                 <input value={q} onChange={e => setQ(e.target.value)}
-                  placeholder="Pregunta algo sobre el geoportal..." disabled={busy}
+                  placeholder={apiKey ? "Pregunta lo que quieras sobre el geoportal o manuscrito..." : "Usa las preguntas sugeridas o pregunta sobre el manuscrito..."}
+                  disabled={busy}
                   className="flex-1 px-4 py-3 border border-[var(--border)] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"/>
-                <button type="submit" disabled={busy || !q.trim()} className="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+                <button type="submit" disabled={busy || !q.trim()} className="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 disabled:opacity-50" aria-label="enviar">
                   <Send size={18}/>
                 </button>
               </form>
             </div>
           </div>
 
-          <div className="mt-6">
+          {/* Explicación del modo local */}
+          {!apiKey && (
+            <div className="mt-5 card bg-amber-50 border-l-4 border-amber-400">
+              <h3 className="text-sm font-bold mb-1 flex items-center gap-2"><HelpCircle size={14}/> ¿Por qué solo respuestas pre-indexadas?</h3>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                El modo local garantiza <strong>exactitud 100%</strong>: cada respuesta es texto literal verificado del manuscrito.
+                Es adecuado para consultas frecuentes sobre metodología, resultados y datos. Si necesitas preguntas libres,
+                configura tu clave de Claude API (arriba) para generación abierta con el manuscrito como contexto.
+              </p>
+            </div>
+          )}
+
+          {/* Preguntas sugeridas — selector de categoría */}
+          <div className="mt-8">
             <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3 flex items-center gap-2">
-              <MessageCircle size={14}/> Preguntas sugeridas
+              <Database size={14}/> Preguntas pre-indexadas ({KB.length} disponibles)
             </h3>
-            <div className="flex flex-wrap gap-2">
-              {SUGERENCIAS.map(s => (
-                <button key={s} onClick={() => send(s)} disabled={busy}
-                  className="text-sm border border-[var(--border)] rounded-full px-4 py-2 bg-white hover:bg-indigo-50 hover:border-indigo-300 transition disabled:opacity-50">
-                  {s}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button onClick={() => setFilterCat(null)}
+                className={`text-xs px-3 py-1.5 rounded-full border ${filterCat===null?"bg-indigo-600 text-white border-indigo-600":"bg-white text-[var(--primary)] border-[var(--border)]"}`}>
+                Todas
+              </button>
+              {categories.map(c => (
+                <button key={c} onClick={() => setFilterCat(c)}
+                  className={`text-xs px-3 py-1.5 rounded-full border ${filterCat===c?"bg-indigo-600 text-white border-indigo-600":"bg-white text-[var(--primary)] border-[var(--border)]"}`}>
+                  {c} ({suggestedByCategory[c]?.length ?? 0})
+                </button>
+              ))}
+            </div>
+            <div className="grid md:grid-cols-2 gap-2">
+              {shownQuestions.map((e, i) => (
+                <button key={i} onClick={() => send(e.q)} disabled={busy}
+                  className="text-left text-sm border border-[var(--border)] rounded-lg px-4 py-3 bg-white hover:bg-indigo-50 hover:border-indigo-300 transition disabled:opacity-50">
+                  <div className="text-[10px] uppercase tracking-wider text-indigo-600 font-bold mb-0.5">{e.category}</div>
+                  <div>{e.q}</div>
                 </button>
               ))}
             </div>

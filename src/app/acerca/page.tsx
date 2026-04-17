@@ -1,25 +1,26 @@
 import { SITE } from "@/data/config";
 import { User, Book, Award, Mail, ExternalLink } from "lucide-react";
 import Avatar from "@/components/Avatar";
+import { asset } from "@/lib/assets";
+import PageHero from "@/components/PageHero";
 
 export const metadata = { title: "Acerca del Geoportal · Pinto Páez 2026" };
 
 export default function AcercaPage() {
   return (
     <>
-      <section className="bg-[var(--primary-dark)] text-white py-14">
-        <div className="container-prose">
-          <h1 className="text-white mb-3">Acerca del Geoportal</h1>
-          <p className="text-xl opacity-90 max-w-3xl">
-            Marco institucional, autor, cita sugerida, manuscrito de referencia y contacto.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Acerca del Geoportal"
+        subtitle="Marco institucional, autor, cita sugerida, manuscrito de referencia y contacto."
+        image="geoparque_Mapa_Geoparques.jpg"
+        overlayColor="rgba(10,53,88,0.85)"
+        credit="Imagen: Geoparques Mundiales UNESCO · geoparque.imbabura.gob.ec"
+      />
 
       <section className="container-prose py-12 grid md:grid-cols-3 gap-6">
         <div className="card md:col-span-2">
           <div className="flex items-center gap-4 mb-4">
-            <Avatar src="img/autor_vhpp.jpg" name="Víctor Hugo Pinto Páez" size={96}/>
+            <Avatar src={asset("/img/autor_vhpp.jpg")} name="Víctor Hugo Pinto Páez" size={96}/>
             <div>
               <h2 className="text-2xl mb-0">{SITE.author}</h2>
               <div className="text-sm text-[var(--text-muted)]">Maestrando · USGP {SITE.year}</div>

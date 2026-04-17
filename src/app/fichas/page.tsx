@@ -2,6 +2,8 @@
 import { useMemo, useState } from "react";
 import { FICHAS, fichaDownloadUrl, fichaItemUrl } from "@/data/fichas";
 import { Download, ExternalLink, Search, FileText } from "lucide-react";
+import PageHero from "@/components/PageHero";
+import RegisterGateLink from "@/components/RegisterGateLink";
 
 export default function FichasPage() {
   const [q, setQ] = useState("");
@@ -16,15 +18,13 @@ export default function FichasPage() {
 
   return (
     <>
-      <section className="bg-[var(--accent-2)] text-white py-14">
-        <div className="container-prose">
-          <h1 className="text-white mb-3">Fichas Parroquiales</h1>
-          <p className="text-xl opacity-90 max-w-3xl">
-            42 fichas PDF (una por parroquia) con IR medio y máximo bajo los 9 escenarios, cultivo más vulnerable,
-            mensaje de priorización y recomendación operativa para los GADs.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Fichas Parroquiales"
+        subtitle="42 fichas PDF (una por parroquia) con IR medio y máximo bajo los 9 escenarios, cultivo más vulnerable, mensaje de priorización y recomendación operativa para los GADs."
+        image="wm_lago_san_pablo.jpg"
+        overlayColor="rgba(34,139,110,0.78)"
+        credit="Imagen: Muelle del Lago San Pablo (Otavalo) · Wikimedia Commons · CC BY-SA"
+      />
 
       <section className="container-prose py-6 sticky top-[64px] bg-[var(--bg)] z-10 border-b border-[var(--border)]">
         <div className="flex flex-wrap gap-3 items-center">
@@ -58,11 +58,16 @@ export default function FichasPage() {
                 </div>
               </div>
               <div className="flex gap-2 mt-auto">
-                <a href={fichaDownloadUrl(f.id)} download={`Ficha_${f.parroquia}.pdf`} target="_blank"
-                  className="flex-1 inline-flex items-center justify-center gap-1 bg-[var(--accent-2)] text-white px-3 py-2 rounded text-sm font-semibold hover:bg-emerald-700">
+                <RegisterGateLink
+                  href={fichaDownloadUrl(f.id)}
+                  fileName={`Ficha_${f.parroquia}.pdf`}
+                  tipo="ficha"
+                  className="flex-1 inline-flex items-center justify-center gap-1 bg-[var(--accent-2)] text-white px-3 py-2 rounded text-sm font-semibold hover:bg-emerald-700"
+                  ariaLabel={`Descargar ficha ${f.parroquia}`}
+                >
                   <Download size={14}/> PDF
-                </a>
-                <a href={fichaItemUrl(f.id)} target="_blank"
+                </RegisterGateLink>
+                <a href={fichaItemUrl(f.id)} target="_blank" rel="noopener"
                   className="inline-flex items-center justify-center gap-1 border border-[var(--accent-2)] text-[var(--accent-2)] px-3 py-2 rounded text-sm font-semibold hover:bg-[var(--accent-2)] hover:text-white">
                   <ExternalLink size={14}/>
                 </a>

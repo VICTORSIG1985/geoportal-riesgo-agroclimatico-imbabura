@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Map, Image as ImgIcon, FileText, Database, Bot, Microscope, BarChart3, Info, ExternalLink } from "lucide-react";
 import { SERVICES, SITE } from "@/data/config";
+import PageHero from "@/components/PageHero";
 
 export default function Servicios() {
   const services = [
@@ -32,14 +33,13 @@ export default function Servicios() {
 
   return (
     <>
-      <section className="bg-[var(--primary)] text-white py-14">
-        <div className="container-prose">
-          <h1 className="text-white mb-3">Servicios del Geoportal</h1>
-          <p className="text-xl opacity-90 max-w-3xl">
-            Ocho servicios integrados que combinan visualización cartográfica, descarga de datos, consulta científica e inteligencia artificial.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Servicios del Geoportal"
+        subtitle="Nueve servicios integrados que combinan visualización cartográfica, descarga de datos, consulta científica e inteligencia artificial."
+        image="wm_cuicocha.jpg"
+        overlayColor="rgba(15,76,129,0.78)"
+        credit="Imagen: Laguna de Cuicocha (Cotacachi) · Wikimedia Commons · CC BY-SA"
+      />
 
       <section className="container-prose py-12 space-y-6">
         {services.map(s => {

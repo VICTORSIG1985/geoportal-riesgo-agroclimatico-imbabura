@@ -1,6 +1,7 @@
 import { Microscope, Cpu, Network, CheckCircle2, AlertTriangle } from "lucide-react";
 import PipelineDiagram from "@/components/PipelineDiagram";
 import DAGDiagram from "@/components/DAGDiagram";
+import PageHero from "@/components/PageHero";
 
 export const metadata = {
   title: "Metodología · Geoportal Riesgo Agroclimático Imbabura",
@@ -31,15 +32,13 @@ export default function MetodologiaPage() {
 
   return (
     <>
-      <section className="bg-[#6B4E9B] text-white py-14">
-        <div className="container-prose">
-          <h1 className="text-white mb-3">Metodología</h1>
-          <p className="text-xl opacity-90 max-w-3xl">
-            Pipeline científico reproducible de 22 scripts Python organizados en 5 fases, integrando datos CMIP6 con corrección
-            de sesgo, modelos de distribución de especies (Random Forest) y una Red Bayesiana de 7 nodos.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Metodología"
+        subtitle="Pipeline científico reproducible de 22 scripts Python organizados en 5 fases, integrando datos CMIP6 con corrección de sesgo, modelos de distribución de especies (Random Forest) y una Red Bayesiana de 7 nodos."
+        image="wm_cotacachi.jpg"
+        overlayColor="rgba(107,78,155,0.82)"
+        credit="Imagen: Volcán Cotacachi · Wikimedia Commons · CC BY-SA"
+      />
 
       <section className="container-prose py-12">
         <h2 className="mb-6 flex items-center gap-3"><Cpu className="text-[var(--primary)]"/> Pipeline científico</h2>

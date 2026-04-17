@@ -1,135 +1,122 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { SERVICES, PRIORITY_COLORS } from "@/data/config";
-import { Layers, Filter, X, FileText, Download } from "lucide-react";
+import { Layers, Filter, X, FileText, Search, Bookmark, Table, Info, Lock, Loader2, RefreshCw } from "lucide-react";
 
 type Cultivo = "papa" | "maiz" | "frejol" | "quinua";
 type SSP = "ssp126" | "ssp370" | "ssp585";
 type Horizonte = "2021-2040" | "2041-2060" | "2061-2080";
+type Modo = "priorizacion" | "analisis";
+
+const BOOKMARKS: { id: string; name: string; bounds: [[number, number], [number, number]]; desc: string }[] = [
+  { id: "prov", name: "Vista provincial — Imbabura", bounds: [[-79.4, 0.05], [-77.7, 0.95]], desc: "Extensión completa de las 42 parroquias." },
+  { id: "intag", name: "Intag — Cotacachi occidental", bounds: [[-78.9, 0.2], [-78.5, 0.55]], desc: "Zona de mayor priorización: García Moreno, Cuellaje, Peñaherrera." },
+  { id: "ibarra_aa", name: "Eje Ibarra — Antonio Ante", bounds: [[-78.3, 0.2], [-78.05, 0.45]], desc: "Corredor urbano-rural, mayor exposición poblacional." },
+  { id: "otavalo", name: "Otavalo — Mojanda", bounds: [[-78.4, 0.05], [-78.15, 0.3]], desc: "Valles con cultivos andinos tradicionales." },
+  { id: "chota", name: "Cuenca del Chota — Pimampiro", bounds: [[-78.1, 0.3], [-77.75, 0.55]], desc: "Valle semiárido con exposición agroclimática alta." },
+  { id: "urcuqui", name: "San Miguel de Urcuquí", bounds: [[-78.35, 0.3], [-78.05, 0.55]], desc: "Transición a la cuenca del Chota, 6 parroquias rurales." },
+];
 
 async function fetchGeojson(url: string, where = "1=1") {
-  const params = new URLSearchParams({
-    where,
-    outFields: "*",
-    f: "geojson",
-    outSR: "4326",
-  });
+  const params = new URLSearchParams({ where, outFields: "*", f: "geojson", outSR: "4326" });
   const res = await fetch(`${url}/query?${params}`);
-  if (!res.ok) throw new Error(`FS error ${res.status}`);
+  if (!res.ok) throw new Error(`FS ${res.status}`);
   return res.json();
 }
 
-function irColor(v: number): string {
-  if (v == null || isNaN(v)) return "#CCCCCC";
-  if (v >= 0.65) return "#B2182B";
-  if (v >= 0.55) return "#EF8A62";
-  if (v >= 0.45) return "#FDDBC7";
-  if (v >= 0.40) return "#67A9CF";
-  return "#2166AC";
-}
+const SSPLABEL: Record<SSP, string> = { ssp126: "SSP1-2.6", ssp370: "SSP3-7.0", ssp585: "SSP5-8.5" };
+const CULTLABEL: Record<Cultivo, string> = { papa: "Papa", maiz: "Maíz", frejol: "Fréjol", quinua: "Quinua" };
 
 export default function MapViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
+
   const [selected, setSelected] = useState<any | null>(null);
-  const [capas, setCapas] = useState({
-    prioridad: true,
-    riesgoLong: false,
-    base: true,
-  });
+  const [modo, setModo] = useState<Modo>("priorizacion");
   const [cultivo, setCultivo] = useState<Cultivo>("papa");
   const [ssp, setSsp] = useState<SSP>("ssp585");
   const [horiz, setHoriz] = useState<Horizonte>("2061-2080");
-  const [loaded, setLoaded] = useState(false);
-  const [panelFiltros, setPanelFiltros] = useState(true);
+  const [opacidad, setOpacidad] = useState(0.78);
 
+  const [priorData, setPriorData] = useState<any | null>(null);
+  const [riesgoData, setRiesgoData] = useState<any | null>(null);
+  const [baseData, setBaseData] = useState<any | null>(null);
+
+  const [loading, setLoading] = useState<string | null>("Iniciando visor...");
+  const [error, setError] = useState<string | null>(null);
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Init map + base layers
   useEffect(() => {
     if (!containerRef.current) return;
-
+    setLoading("Cargando basemap...");
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-      center: [-78.15, 0.35],
-      zoom: 9,
+      center: [-78.2, 0.35], zoom: 9, maxZoom: 14, minZoom: 6,
       attributionControl: false,
-      maxZoom: 14,
-      minZoom: 6,
+      dragRotate: false, touchZoomRotate: false, // modo solo lectura (no rotación)
     });
-    map.addControl(new maplibregl.NavigationControl(), "top-left");
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
     map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
     map.addControl(new maplibregl.AttributionControl({
       customAttribution: "Víctor Hugo Pinto Páez · USGP 2026 · DOI 10.5281/zenodo.19288559 · © CartoDB · © OpenStreetMap",
     }), "bottom-right");
-
     mapRef.current = map;
 
     map.on("load", async () => {
       try {
+        setLoading("Cargando 42 parroquias...");
         const [prior, base] = await Promise.all([
           fetchGeojson(SERVICES.flPrioridad.url),
           fetchGeojson(SERVICES.flParroquias.url),
         ]);
+        setPriorData(prior); setBaseData(base);
 
         map.addSource("base", { type: "geojson", data: base });
-        map.addLayer({
-          id: "base-line", type: "line", source: "base",
-          paint: { "line-color": "#555", "line-width": 0.7, "line-opacity": 0.8 }
-        });
+        map.addLayer({ id: "base-line", type: "line", source: "base",
+          paint: { "line-color": "#555", "line-width": 0.7, "line-opacity": 0.7 } });
 
         map.addSource("prior", { type: "geojson", data: prior });
-        map.addLayer({
-          id: "prior-fill", type: "fill", source: "prior",
+        map.addLayer({ id: "prior-fill", type: "fill", source: "prior",
           paint: {
-            "fill-color": [
-              "match", ["get", "prioridad_final"],
+            "fill-color": ["match", ["get", "prioridad_final"],
               "Muy Alta", PRIORITY_COLORS["Muy Alta"].hex,
               "Alta", PRIORITY_COLORS["Alta"].hex,
               "Alerta", PRIORITY_COLORS["Alerta"].hex,
               "Monitoreo", PRIORITY_COLORS["Monitoreo"].hex,
               "Favorable", PRIORITY_COLORS["Favorable"].hex,
-              "#CCCCCC"
-            ],
-            "fill-opacity": 0.72
-          }
-        });
-        map.addLayer({
-          id: "prior-outline", type: "line", source: "prior",
-          paint: { "line-color": "#222", "line-width": 0.5, "line-opacity": 0.8 }
-        });
-        map.addLayer({
-          id: "prior-highlight", type: "line", source: "prior",
+              "#CCCCCC"],
+            "fill-opacity": 0.78
+          }});
+        map.addLayer({ id: "prior-outline", type: "line", source: "prior",
+          paint: { "line-color": "#222", "line-width": 0.5, "line-opacity": 0.85 } });
+        map.addLayer({ id: "prior-highlight", type: "line", source: "prior",
           paint: { "line-color": "#0A3558", "line-width": 3 },
-          filter: ["==", ["get", "cod_parroq"], "___none___"]
-        });
+          filter: ["==", ["get", "cod_parroq"], "___none___"] });
 
-        // Riesgo Long — empieza oculto
+        // Riesgo analítico (modo análisis) — empieza oculto
+        setLoading("Cargando capa analítica...");
         const riesgo = await fetchGeojson(SERVICES.flRiesgoLong.url, `cultivo='${cultivo}' AND ssp='${ssp}' AND horizonte='${horiz}'`);
+        setRiesgoData(riesgo);
         map.addSource("riesgo", { type: "geojson", data: riesgo });
-        map.addLayer({
-          id: "riesgo-fill", type: "fill", source: "riesgo",
+        map.addLayer({ id: "riesgo-fill", type: "fill", source: "riesgo",
           layout: { visibility: "none" },
           paint: {
-            "fill-color": [
-              "step", ["coalesce", ["get", "ir"], -1],
+            "fill-color": ["step", ["coalesce", ["get", "ir"], -1],
               "#CCCCCC",
-              0.0, "#2166AC",
-              0.40, "#67A9CF",
-              0.45, "#FDDBC7",
-              0.55, "#EF8A62",
-              0.65, "#B2182B",
-            ],
+              0.0, "#2166AC", 0.40, "#67A9CF", 0.45, "#FDDBC7", 0.55, "#EF8A62", 0.65, "#B2182B"],
             "fill-opacity": 0.78
-          }
-        });
-        map.addLayer({
-          id: "riesgo-outline", type: "line", source: "riesgo",
+          }});
+        map.addLayer({ id: "riesgo-outline", type: "line", source: "riesgo",
           layout: { visibility: "none" },
-          paint: { "line-color": "#222", "line-width": 0.5, "line-opacity": 0.8 }
-        });
+          paint: { "line-color": "#222", "line-width": 0.5, "line-opacity": 0.85 } });
 
-        // Zoom al extent
+        // Fit bounds
         try {
           let minx = 180, miny = 90, maxx = -180, maxy = -90;
           for (const f of base.features as any[]) {
@@ -140,27 +127,44 @@ export default function MapViewer() {
               if (y < miny) miny = y; if (y > maxy) maxy = y;
             }
           }
-          map.fitBounds([[minx, miny], [maxx, maxy]], { padding: 40, duration: 0 });
+          map.fitBounds([[minx, miny], [maxx, maxy]], { padding: 50, duration: 0 });
         } catch {}
 
-        // Click
+        // Click → selección
         map.on("click", (e) => {
           const feats = map.queryRenderedFeatures(e.point, { layers: ["prior-fill", "riesgo-fill"] });
-          if (!feats.length) { setSelected(null); map.setFilter("prior-highlight", ["==", ["get","cod_parroq"], "___none___"]); return; }
+          if (!feats.length) { clearSelection(); return; }
           const p = feats[0].properties as any;
-          setSelected(p);
-          map.setFilter("prior-highlight", ["==", ["get", "cod_parroq"], p?.cod_parroq || ""]);
+          selectFeature(p);
         });
-        map.on("mouseenter", "prior-fill", () => map.getCanvas().style.cursor = "pointer");
-        map.on("mouseleave", "prior-fill", () => map.getCanvas().style.cursor = "");
-        map.on("mouseenter", "riesgo-fill", () => map.getCanvas().style.cursor = "pointer");
-        map.on("mouseleave", "riesgo-fill", () => map.getCanvas().style.cursor = "");
 
-        // Disable interactions to protect from modification (panning/zoom still allowed via controls only if we leave them)
-        // Users can still pan/zoom (read-only). No editing or adding features.
-        setLoaded(true);
-      } catch (err) {
+        // Tooltip hover
+        popupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 6 });
+        const bindHover = (layer: string, field: string) => {
+          map.on("mousemove", layer, (e) => {
+            map.getCanvas().style.cursor = "pointer";
+            if (!e.features?.length || !popupRef.current) return;
+            const p = e.features[0].properties as any;
+            const label = p[field] ?? p.parroquia;
+            const extra = layer === "prior-fill" ? `<br><em>${p.prioridad_final} · IR ${Number(p.ir_medio_final).toFixed(3)}</em>` :
+                          `<br><em>IR ${Number(p.ir).toFixed(3)}</em>`;
+            popupRef.current.setLngLat(e.lngLat).setHTML(
+              `<div style="font-size:12px;font-weight:600">${label}${extra}</div>`
+            ).addTo(map);
+          });
+          map.on("mouseleave", layer, () => {
+            map.getCanvas().style.cursor = "";
+            popupRef.current?.remove();
+          });
+        };
+        bindHover("prior-fill", "parroquia");
+        bindHover("riesgo-fill", "parroquia");
+
+        setLoading(null);
+      } catch (err: any) {
         console.error("map load err", err);
+        setError(`No se pudieron cargar los datos: ${err.message || err}. Verifique su conexión.`);
+        setLoading(null);
       }
     });
 
@@ -168,147 +172,322 @@ export default function MapViewer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Toggle capas
-  useEffect(() => {
-    const m = mapRef.current; if (!m || !loaded) return;
-    const vis = (id: string, show: boolean) => {
-      if (m.getLayer(id)) m.setLayoutProperty(id, "visibility", show ? "visible" : "none");
-    };
-    vis("prior-fill", capas.prioridad);
-    vis("prior-outline", capas.prioridad);
-    vis("base-line", capas.base);
-    vis("riesgo-fill", capas.riesgoLong);
-    vis("riesgo-outline", capas.riesgoLong);
-  }, [capas, loaded]);
+  function clearSelection() {
+    setSelected(null);
+    mapRef.current?.setFilter("prior-highlight", ["==", ["get", "cod_parroq"], "___none___"]);
+  }
+  function selectFeature(p: any) {
+    setSelected(p);
+    mapRef.current?.setFilter("prior-highlight", ["==", ["get", "cod_parroq"], p?.cod_parroq || ""]);
+  }
 
-  // Update Riesgo Long on filter change
+  // Cambio de modo
+  useEffect(() => {
+    const m = mapRef.current; if (!m || !m.getLayer("prior-fill")) return;
+    const priorVis = modo === "priorizacion";
+    m.setLayoutProperty("prior-fill", "visibility", priorVis ? "visible" : "none");
+    m.setLayoutProperty("prior-outline", "visibility", priorVis ? "visible" : "none");
+    m.setLayoutProperty("riesgo-fill", "visibility", priorVis ? "none" : "visible");
+    m.setLayoutProperty("riesgo-outline", "visibility", priorVis ? "none" : "visible");
+  }, [modo]);
+
+  // Opacidad
+  useEffect(() => {
+    const m = mapRef.current; if (!m || !m.getLayer("prior-fill")) return;
+    m.setPaintProperty("prior-fill", "fill-opacity", opacidad);
+    m.setPaintProperty("riesgo-fill", "fill-opacity", opacidad);
+  }, [opacidad]);
+
+  // Refetch riesgo según filtros
   const refetchRiesgo = useCallback(async () => {
-    const m = mapRef.current; if (!m || !loaded) return;
+    const m = mapRef.current; if (!m || !m.getSource("riesgo")) return;
+    setLoading("Actualizando capa analítica...");
     try {
       const data = await fetchGeojson(SERVICES.flRiesgoLong.url, `cultivo='${cultivo}' AND ssp='${ssp}' AND horizonte='${horiz}'`);
-      const src = m.getSource("riesgo") as maplibregl.GeoJSONSource | undefined;
-      if (src) src.setData(data);
-    } catch (err) {
-      console.error("riesgo refetch err", err);
+      setRiesgoData(data);
+      (m.getSource("riesgo") as maplibregl.GeoJSONSource).setData(data);
+      setLoading(null);
+    } catch (err: any) {
+      setError(`No se pudo actualizar: ${err.message}`); setLoading(null);
     }
-  }, [cultivo, ssp, horiz, loaded]);
+  }, [cultivo, ssp, horiz]);
+  useEffect(() => { if (modo === "analisis") refetchRiesgo(); }, [cultivo, ssp, horiz, modo, refetchRiesgo]);
 
-  useEffect(() => { refetchRiesgo(); }, [refetchRiesgo]);
+  // Bookmarks
+  function goTo(bm: typeof BOOKMARKS[number]) {
+    mapRef.current?.fitBounds(bm.bounds, { padding: 40, duration: 600 });
+  }
 
-  const cultLabel: Record<Cultivo, string> = { papa: "Papa", maiz: "Maíz", frejol: "Fréjol", quinua: "Quinua" };
-  const sspLabel: Record<SSP, string> = { ssp126: "SSP1-2.6", ssp370: "SSP3-7.0", ssp585: "SSP5-8.5" };
+  // Búsqueda por parroquia
+  const parroquiaMatches = useMemo(() => {
+    if (!searchTerm || !priorData) return [];
+    const t = searchTerm.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return (priorData.features as any[])
+      .filter(f => {
+        const p = f.properties;
+        const name = (p.parroquia || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return name.includes(t);
+      })
+      .slice(0, 6)
+      .map(f => f.properties);
+  }, [searchTerm, priorData]);
+
+  function zoomToParroquia(cod: string) {
+    if (!priorData || !mapRef.current) return;
+    const feat = (priorData.features as any[]).find(f => f.properties.cod_parroq === cod);
+    if (!feat) return;
+    try {
+      let minx = 180, miny = 90, maxx = -180, maxy = -90;
+      const coords = (feat.geometry.coordinates as any[]).flat(3);
+      for (let i = 0; i < coords.length; i += 2) {
+        const x = coords[i], y = coords[i+1];
+        if (x < minx) minx = x; if (x > maxx) maxx = x;
+        if (y < miny) miny = y; if (y > maxy) maxy = y;
+      }
+      mapRef.current.fitBounds([[minx, miny], [maxx, maxy]], { padding: 80, duration: 700 });
+      selectFeature(feat.properties);
+      setSearchTerm("");
+    } catch {}
+  }
+
+  // Tabla resumen sincronizada
+  const resumen = useMemo(() => {
+    if (modo === "priorizacion") {
+      if (!priorData) return null;
+      const feats = (priorData.features as any[]).map(f => f.properties);
+      const byPrio: Record<string, number> = {};
+      feats.forEach(f => byPrio[f.prioridad_final] = (byPrio[f.prioridad_final] || 0) + 1);
+      const vals = feats.map(f => Number(f.ir_medio_final)).filter(v => !isNaN(v));
+      return {
+        titulo: "Distribución provincial (IR medio final)",
+        indicadores: [
+          { k: "Parroquias", v: feats.length },
+          { k: "IR mín", v: Math.min(...vals).toFixed(3) },
+          { k: "IR med", v: (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(3) },
+          { k: "IR máx", v: Math.max(...vals).toFixed(3) },
+        ],
+        categorias: Object.entries(byPrio).sort((a,b) => {
+          const order = ["Muy Alta","Alta","Alerta","Monitoreo","Favorable"];
+          return order.indexOf(a[0]) - order.indexOf(b[0]);
+        }),
+        top: feats.sort((a,b) => Number(b.ir_medio_final) - Number(a.ir_medio_final)).slice(0, 5),
+      };
+    } else {
+      if (!riesgoData) return null;
+      const feats = (riesgoData.features as any[]).map(f => f.properties);
+      const vals = feats.map(f => Number(f.ir)).filter(v => !isNaN(v));
+      return {
+        titulo: `${CULTLABEL[cultivo]} · ${SSPLABEL[ssp]} · ${horiz}`,
+        indicadores: [
+          { k: "Parroquias", v: feats.length },
+          { k: "IR mín", v: Math.min(...vals).toFixed(3) },
+          { k: "IR med", v: (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(3) },
+          { k: "IR máx", v: Math.max(...vals).toFixed(3) },
+        ],
+        categorias: null,
+        top: feats.sort((a,b) => Number(b.ir) - Number(a.ir)).slice(0, 5),
+      };
+    }
+  }, [modo, priorData, riesgoData, cultivo, ssp, horiz]);
 
   return (
     <div className="flex h-[calc(100vh-64px)]" onContextMenu={(e) => e.preventDefault()}>
-      <aside className="w-96 bg-white border-r border-[var(--border)] overflow-y-auto flex-shrink-0">
-        <div className="p-5">
-          <h2 className="text-xl mb-2 flex items-center gap-2"><Layers size={20}/> Visor Cartográfico</h2>
-          <div className="text-xs text-[var(--text-muted)] mb-4 bg-amber-50 border border-amber-200 rounded p-2">
-            🔒 Visor en modo <strong>solo lectura</strong>. Haga clic en una parroquia para ver detalle y descargar la ficha PDF.
-          </div>
-
-          <div className="mb-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-[var(--text-muted)]">Capas</h3>
-            <label className="flex items-center gap-2 text-sm py-1 cursor-pointer">
-              <input type="checkbox" checked={capas.prioridad} onChange={e => setCapas(v => ({ ...v, prioridad: e.target.checked }))}/>
-              <span>Priorización Final (42)</span>
-              <span className="text-xs text-[var(--text-muted)] ml-auto">por IR medio</span>
-            </label>
-            <label className="flex items-center gap-2 text-sm py-1 cursor-pointer">
-              <input type="checkbox" checked={capas.riesgoLong} onChange={e => setCapas(v => ({ ...v, riesgoLong: e.target.checked }))}/>
-              <span>Riesgo por Escenario</span>
-              <span className="text-xs text-[var(--text-muted)] ml-auto">{cultLabel[cultivo]} · {sspLabel[ssp]} · {horiz}</span>
-            </label>
-            <label className="flex items-center gap-2 text-sm py-1 cursor-pointer">
-              <input type="checkbox" checked={capas.base} onChange={e => setCapas(v => ({ ...v, base: e.target.checked }))}/>
-              <span>Parroquias Base (líneas)</span>
-            </label>
-          </div>
-
-          <div className="mb-4 border-t pt-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1"><Filter size={12}/> Filtros — capa Riesgo</h3>
-              <button onClick={() => setPanelFiltros(!panelFiltros)} className="text-xs text-[var(--primary)] font-semibold">{panelFiltros ? "Ocultar" : "Mostrar"}</button>
+      <aside className="w-[380px] bg-white border-r border-[var(--border)] overflow-y-auto flex-shrink-0">
+        <div className="p-5 space-y-4">
+          <div>
+            <h2 className="text-xl mb-1 flex items-center gap-2"><Layers size={20}/> Visor Cartográfico</h2>
+            <div className="text-xs text-[var(--text-muted)] bg-amber-50 border border-amber-200 rounded p-2 flex gap-1 items-start">
+              <Lock size={12} className="mt-0.5 flex-shrink-0"/>
+              <span>Modo <strong>solo lectura</strong>. Click en una parroquia → ficha. Hover → tooltip.</span>
             </div>
-            {panelFiltros && (
-              <div className="space-y-2 text-sm">
-                <div>
-                  <label className="text-xs text-[var(--text-muted)] block mb-1">Cultivo</label>
-                  <div className="flex gap-1 flex-wrap">
-                    {(Object.keys(cultLabel) as Cultivo[]).map(c => (
-                      <button key={c} onClick={() => { setCultivo(c); setCapas(v => ({ ...v, riesgoLong: true })); }}
-                        className={`px-2.5 py-1.5 text-xs rounded-full border ${cultivo===c?"bg-[var(--primary)] text-white border-[var(--primary)]":"bg-white text-[var(--text)] border-[var(--border)]"}`}>
-                        {cultLabel[c]}
-                      </button>
-                    ))}
-                  </div>
+          </div>
+
+          {/* Modo dual */}
+          <div>
+            <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-2">Modo</div>
+            <div className="grid grid-cols-2 gap-1 p-1 bg-[var(--bg)] rounded">
+              <button onClick={() => setModo("priorizacion")}
+                className={`text-xs py-2 rounded font-semibold ${modo==="priorizacion"?"bg-white shadow text-[var(--primary)]":"text-[var(--text-muted)]"}`}>
+                Priorización
+              </button>
+              <button onClick={() => setModo("analisis")}
+                className={`text-xs py-2 rounded font-semibold ${modo==="analisis"?"bg-white shadow text-[var(--primary)]":"text-[var(--text-muted)]"}`}>
+                Análisis
+              </button>
+            </div>
+            <div className="text-[10px] text-[var(--text-muted)] mt-1">
+              {modo === "priorizacion" ? "Lectura ejecutiva: prioridad final por parroquia." : "Exploración por cultivo × SSP × horizonte (1.512 inferencias)."}
+            </div>
+          </div>
+
+          {/* Filtros modo análisis */}
+          {modo === "analisis" && (
+            <div className="space-y-2 pt-2 border-t border-[var(--border)]">
+              <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1 flex items-center gap-1"><Filter size={11}/> Filtros</div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Cultivo</label>
+                <div className="flex gap-1 flex-wrap">
+                  {(Object.keys(CULTLABEL) as Cultivo[]).map(c => (
+                    <button key={c} onClick={() => setCultivo(c)}
+                      className={`px-2 py-1 text-[11px] rounded-full border ${cultivo===c?"bg-[var(--primary)] text-white border-[var(--primary)]":"bg-white text-[var(--text)] border-[var(--border)]"}`}>
+                      {CULTLABEL[c]}
+                    </button>
+                  ))}
                 </div>
-                <div>
-                  <label className="text-xs text-[var(--text-muted)] block mb-1">Escenario climático (SSP)</label>
-                  <div className="flex gap-1 flex-wrap">
-                    {(Object.keys(sspLabel) as SSP[]).map(s => (
-                      <button key={s} onClick={() => { setSsp(s); setCapas(v => ({ ...v, riesgoLong: true })); }}
-                        className={`px-2.5 py-1.5 text-xs rounded-full border ${ssp===s?"bg-[var(--primary)] text-white border-[var(--primary)]":"bg-white text-[var(--text)] border-[var(--border)]"}`}>
-                        {sspLabel[s]}
-                      </button>
-                    ))}
-                  </div>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Escenario SSP</label>
+                <div className="flex gap-1 flex-wrap">
+                  {(Object.keys(SSPLABEL) as SSP[]).map(s => (
+                    <button key={s} onClick={() => setSsp(s)}
+                      className={`px-2 py-1 text-[11px] rounded-full border ${ssp===s?"bg-[var(--primary)] text-white border-[var(--primary)]":"bg-white text-[var(--text)] border-[var(--border)]"}`}>
+                      {SSPLABEL[s]}
+                    </button>
+                  ))}
                 </div>
-                <div>
-                  <label className="text-xs text-[var(--text-muted)] block mb-1">Horizonte temporal</label>
-                  <div className="flex gap-1 flex-wrap">
-                    {(["2021-2040","2041-2060","2061-2080"] as Horizonte[]).map(h => (
-                      <button key={h} onClick={() => { setHoriz(h); setCapas(v => ({ ...v, riesgoLong: true })); }}
-                        className={`px-2.5 py-1.5 text-xs rounded-full border ${horiz===h?"bg-[var(--primary)] text-white border-[var(--primary)]":"bg-white text-[var(--text)] border-[var(--border)]"}`}>
-                        {h}
-                      </button>
-                    ))}
-                  </div>
+              </div>
+              <div>
+                <label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] block mb-1">Horizonte</label>
+                <div className="flex gap-1 flex-wrap">
+                  {(["2021-2040","2041-2060","2061-2080"] as Horizonte[]).map(h => (
+                    <button key={h} onClick={() => setHoriz(h)}
+                      className={`px-2 py-1 text-[11px] rounded-full border ${horiz===h?"bg-[var(--primary)] text-white border-[var(--primary)]":"bg-white text-[var(--text)] border-[var(--border)]"}`}>
+                      {h}
+                    </button>
+                  ))}
                 </div>
+              </div>
+              <button onClick={() => { setCultivo("papa"); setSsp("ssp585"); setHoriz("2061-2080"); }}
+                className="text-[10px] text-[var(--primary)] font-semibold hover:underline flex items-center gap-1">
+                <RefreshCw size={10}/> Restablecer filtros
+              </button>
+            </div>
+          )}
+
+          {/* Búsqueda */}
+          <div className="pt-2 border-t border-[var(--border)]">
+            <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1 flex items-center gap-1"><Search size={11}/> Buscar parroquia</div>
+            <div className="relative">
+              <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Ej. García Moreno, Lita..."
+                className="w-full pl-3 pr-8 py-2 text-sm border border-[var(--border)] rounded"/>
+              {searchTerm && <button onClick={() => setSearchTerm("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"><X size={14}/></button>}
+            </div>
+            {parroquiaMatches.length > 0 && (
+              <div className="mt-1 bg-white border border-[var(--border)] rounded shadow-sm max-h-40 overflow-y-auto">
+                {parroquiaMatches.map(p => (
+                  <button key={p.cod_parroq} onClick={() => zoomToParroquia(p.cod_parroq)}
+                    className="w-full text-left text-sm px-3 py-1.5 hover:bg-[var(--bg)] border-b last:border-b-0">
+                    <div className="font-semibold text-xs">{p.parroquia}</div>
+                    <div className="text-[10px] text-[var(--text-muted)]">{p.canton}</div>
+                  </button>
+                ))}
               </div>
             )}
           </div>
 
-          <div className="mb-4 border-t pt-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-[var(--text-muted)]">Leyenda — IR / Prioridad</h3>
+          {/* Bookmarks */}
+          <div className="pt-2 border-t border-[var(--border)]">
+            <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1 flex items-center gap-1"><Bookmark size={11}/> Zonas de interés</div>
+            <div className="grid grid-cols-2 gap-1">
+              {BOOKMARKS.map(b => (
+                <button key={b.id} onClick={() => goTo(b)} title={b.desc}
+                  className="text-[11px] py-1.5 px-2 rounded border border-[var(--border)] bg-white hover:bg-[var(--bg)] text-left">
+                  {b.name.split(" — ")[0]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Opacidad */}
+          <div className="pt-2 border-t border-[var(--border)]">
+            <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">Opacidad ({Math.round(opacidad*100)}%)</div>
+            <input type="range" min={0.3} max={1} step={0.05} value={opacidad} onChange={e => setOpacidad(Number(e.target.value))} className="w-full"/>
+          </div>
+
+          {/* Leyenda dinámica */}
+          <div className="pt-2 border-t border-[var(--border)]">
+            <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">
+              Leyenda {modo==="priorizacion"?"· Prioridad final":"· Índice de Riesgo"}
+            </div>
             {Object.entries(PRIORITY_COLORS).map(([k, v]) => (
-              <div key={k} className="flex items-center gap-2 text-xs py-1">
-                <span className="w-5 h-4 rounded" style={{ background: v.hex }}></span>
+              <div key={k} className="flex items-center gap-2 text-[11px] py-0.5">
+                <span className="w-5 h-4 rounded inline-block" style={{ background: v.hex, opacity: opacidad }}></span>
                 <span>{v.label}</span>
               </div>
             ))}
           </div>
 
+          {/* Tabla resumen sincronizada */}
+          {resumen && (
+            <div className="pt-2 border-t border-[var(--border)]">
+              <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1 flex items-center gap-1"><Table size={11}/> Resumen</div>
+              <div className="text-[11px] text-[var(--text-muted)] mb-1">{resumen.titulo}</div>
+              <div className="grid grid-cols-4 gap-1 text-[10px] mb-2">
+                {resumen.indicadores.map(i => (
+                  <div key={i.k} className="text-center bg-[var(--bg)] rounded p-1">
+                    <div className="font-bold text-[var(--primary)] text-xs">{i.v}</div>
+                    <div className="text-[9px] text-[var(--text-muted)] uppercase">{i.k}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-0.5">Top 5 parroquias</div>
+              <ul className="text-[11px] space-y-0.5">
+                {resumen.top.map((p: any, i: number) => {
+                  const v = modo==="priorizacion" ? p.ir_medio_final : p.ir;
+                  return (
+                    <li key={p.cod_parroq || i} className="flex justify-between cursor-pointer hover:bg-[var(--bg)] px-1 rounded"
+                      onClick={() => selectFeature(p)}>
+                      <span className="truncate mr-1">{i+1}. {p.parroquia}</span>
+                      <span className="font-mono font-semibold">{Number(v).toFixed(3)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {/* Metadatos del visor */}
+          <div className="pt-2 border-t border-[var(--border)] text-[10px] text-[var(--text-muted)] space-y-0.5">
+            <div className="flex items-center gap-1 font-semibold text-[11px] mb-1"><Info size={11}/> Metadatos</div>
+            <div>Fuente: ArcGIS Online USGP-EC · 3 Feature Services REST</div>
+            <div>Variable: IR = 0·P(Bajo) + 0,5·P(Medio) + 1·P(Alto)</div>
+            <div>SRS: WGS84 (EPSG:4326)</div>
+            <div>Resolución: parroquial (~10 km raster climático)</div>
+            <div>Actualización: 2026-03 · DOI 10.5281/zenodo.19288559</div>
+          </div>
+
+          {/* Selección detallada */}
           {selected && (
-            <div className="border-t pt-4 mt-4">
-              <button onClick={() => { setSelected(null); mapRef.current?.setFilter("prior-highlight", ["==", ["get","cod_parroq"], "___none___"]); }}
-                className="float-right text-[var(--text-muted)] hover:text-[var(--text)]"><X size={16}/></button>
-              <h3 className="text-lg font-bold">{selected.parroquia}</h3>
-              <div className="text-sm text-[var(--text-muted)] mb-2">{selected.canton}</div>
-              <div className="space-y-1 text-sm">
-                {selected.ranking && <div>Ranking provincial: <strong>#{selected.ranking}</strong></div>}
-                {selected.ir_medio_final != null && <div>IR medio: <strong>{Number(selected.ir_medio_final).toFixed(3)}</strong></div>}
+            <div className="pt-3 border-t-2 border-[var(--primary)]">
+              <div className="flex justify-between items-start mb-1">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">{selected.canton}</div>
+                  <h3 className="text-base font-bold">{selected.parroquia}</h3>
+                </div>
+                <button onClick={clearSelection} className="text-[var(--text-muted)] hover:text-[var(--text)]"><X size={14}/></button>
+              </div>
+              <div className="space-y-1 text-xs">
+                {selected.ranking && <div>Ranking: <strong>#{selected.ranking}</strong></div>}
+                {selected.ir_medio_final != null && <div>IR medio final: <strong>{Number(selected.ir_medio_final).toFixed(3)}</strong></div>}
                 {selected.ir_max_final != null && <div>IR máximo: <strong>{Number(selected.ir_max_final).toFixed(3)}</strong></div>}
-                {selected.n_cult_alto != null && <div>Cultivos en alto riesgo: <strong>{selected.n_cult_alto}</strong> / 4</div>}
+                {selected.n_cult_alto != null && <div>Cultivos en alto riesgo: <strong>{selected.n_cult_alto}</strong>/4</div>}
                 {selected.ir != null && (
-                  <div>IR ({cultLabel[cultivo]}, {sspLabel[ssp]}, {horiz}): <strong>{Number(selected.ir).toFixed(3)}</strong></div>
-                )}
-                {selected.exp_pa_ha != null && (
-                  <div className="text-xs mt-1">Exposición (ha): Papa {Number(selected.exp_pa_ha).toFixed(1)} · Maíz {Number(selected.exp_ma_ha).toFixed(1)} · Fréjol {Number(selected.exp_fr_ha).toFixed(1)} · Quinua {Number(selected.exp_qu_ha).toFixed(2)}</div>
+                  <div>IR ({CULTLABEL[cultivo]}, {SSPLABEL[ssp]}, {horiz}): <strong>{Number(selected.ir).toFixed(3)}</strong></div>
                 )}
                 {selected.prioridad_final && (
-                  <div className="mt-2">
-                    <span className="badge" style={{ background: PRIORITY_COLORS[selected.prioridad_final as keyof typeof PRIORITY_COLORS]?.hex, color: 'white' }}>
+                  <div className="mt-1">
+                    <span className="badge" style={{ background: PRIORITY_COLORS[selected.prioridad_final as keyof typeof PRIORITY_COLORS]?.hex, color: "white" }}>
                       {selected.prioridad_final}
                     </span>
                   </div>
                 )}
                 {selected.mensaje_priorizacion && (
-                  <p className="text-xs mt-2 bg-[var(--bg)] p-2 rounded"><em>{selected.mensaje_priorizacion}</em></p>
+                  <p className="text-[11px] mt-1 bg-[var(--bg)] p-2 rounded"><em>{selected.mensaje_priorizacion}</em></p>
                 )}
                 {selected.ficha_url && (
-                  <a href={selected.ficha_url} target="_blank" rel="noopener" className="btn-primary text-sm mt-3 inline-flex items-center gap-1">
-                    <FileText size={14}/> Descargar ficha PDF
+                  <a href={selected.ficha_url} target="_blank" rel="noopener" className="btn-primary text-xs mt-2 inline-flex items-center gap-1">
+                    <FileText size={12}/> Descargar ficha PDF
                   </a>
                 )}
               </div>
@@ -316,7 +495,34 @@ export default function MapViewer() {
           )}
         </div>
       </aside>
-      <div ref={containerRef} className="flex-1"/>
+
+      <div className="flex-1 relative">
+        <div ref={containerRef} className="w-full h-full"/>
+        {loading && (
+          <div className="absolute top-3 right-3 bg-white/95 border border-[var(--border)] rounded-lg shadow px-3 py-2 text-xs flex items-center gap-2">
+            <Loader2 size={14} className="animate-spin text-[var(--primary)]"/> {loading}
+          </div>
+        )}
+        {error && (
+          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-red-50 border border-red-300 rounded-lg shadow-lg px-4 py-3 max-w-md">
+            <div className="text-sm font-semibold text-red-700 mb-1 flex items-center gap-1"><AlertCircle size={14}/> Error al cargar datos</div>
+            <div className="text-xs text-red-600 mb-2">{error}</div>
+            <button onClick={() => window.location.reload()} className="text-xs text-red-700 underline">Recargar</button>
+          </div>
+        )}
+      </div>
     </div>
+  );
+}
+
+function AlertCircle(props: any) {
+  // stub re-import; keep icon available via lucide-react
+  const { size = 16, ...rest } = props;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...rest}>
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
   );
 }

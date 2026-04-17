@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Database, Code, FileJson, Download, ExternalLink, Shield, Map, FileText, Info } from "lucide-react";
 import { SERVICES, SITE } from "@/data/config";
+import PageHero from "@/components/PageHero";
 
 export const metadata = { title: "Datos Abiertos · Geoportal Imbabura" };
 
@@ -8,15 +9,13 @@ export default function DatosPage() {
   const layers = [SERVICES.flParroquias, SERVICES.flRiesgoLong, SERVICES.flPrioridad];
   return (
     <>
-      <section className="bg-[#333] text-white py-14">
-        <div className="container-prose">
-          <h1 className="text-white mb-3">Datos Abiertos</h1>
-          <p className="text-xl opacity-90 max-w-3xl">
-            Acceso libre y reproducible a los 3 Feature Services REST, al código fuente (22 scripts Python), al dataset
-            autoritativo y a los metadatos ISO 19115. Licencia CC BY 4.0.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Datos Abiertos"
+        subtitle="Acceso libre y reproducible a los 3 Feature Services REST, al código fuente, al dataset autoritativo y a los metadatos ISO 19115. Licencia CC BY 4.0."
+        image="wm_imbabura.jpg"
+        overlayColor="rgba(30,30,30,0.82)"
+        credit="Imagen: Volcán Imbabura — Wikimedia Commons · CC BY-SA"
+      />
 
       <section className="container-prose py-8">
         <div className="card bg-blue-50 border-l-4 border-blue-500">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SITE } from "@/data/config";
 import { Map, Image as ImgIcon, FileText, Database, Bot, BookOpen, Microscope, BarChart3, Info, ArrowRight, Download } from "lucide-react";
+import { asset } from "@/lib/assets";
 
 const services = [
   { href: "/visor", icon: Map, color: "#B2182B", title: "Visor Cartográfico", desc: "Mapa interactivo con 3 capas, filtros por cultivo × SSP × horizonte, popups con descarga de fichas." },
@@ -28,7 +29,7 @@ export default function Home() {
     <>
       <section className="relative overflow-hidden">
         <img
-          src="img/imbabura_geoparque_slide1.png"
+          src={asset("/img/imbabura_geoparque_slide1.png")}
           alt="Paisaje de Imbabura — volcán y lago"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -49,13 +50,13 @@ export default function Home() {
               (peligro-exposición-susceptibilidad).
             </p>
             <div className="flex flex-wrap gap-3">
-              <Link href="/visor" className="btn-primary bg-[var(--accent)] hover:bg-red-900 border-0 text-white">
+              <Link href="/visor" className="inline-flex items-center gap-2 bg-[var(--accent)] text-white px-5 py-3 rounded-lg font-semibold hover:bg-red-900 shadow-lg">
                 <Map size={20}/> Abrir Visor Cartográfico <ArrowRight size={18}/>
               </Link>
-              <Link href="/resultados" className="btn-secondary bg-transparent border-white text-white hover:bg-white hover:text-[var(--primary)]">
+              <Link href="/resultados" className="inline-flex items-center gap-2 bg-white/95 text-[var(--primary-dark)] px-5 py-3 rounded-lg font-semibold hover:bg-white shadow-lg">
                 <BarChart3 size={20}/> Ver Resultados
               </Link>
-              <Link href="/asistente" className="btn-secondary bg-transparent border-white text-white hover:bg-white hover:text-[var(--primary)]">
+              <Link href="/asistente" className="inline-flex items-center gap-2 bg-white/20 backdrop-blur border-2 border-white text-white px-5 py-3 rounded-lg font-semibold hover:bg-white hover:text-[var(--primary)] shadow-lg">
                 <Bot size={20}/> Consultar con IA
               </Link>
             </div>

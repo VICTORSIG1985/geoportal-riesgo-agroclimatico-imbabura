@@ -1,6 +1,9 @@
 import Link from "next/link";
 import scripts from "@/data/scripts.json";
 import { Download, FileCode, Shield, Info, ExternalLink } from "lucide-react";
+import { assetEncoded } from "@/lib/assets";
+import RegisterGateLink from "@/components/RegisterGateLink";
+import PageHero from "@/components/PageHero";
 
 export const metadata = { title: "Descargas de scripts por fase · Geoportal Imbabura" };
 
@@ -41,15 +44,13 @@ export default function DescargasPage() {
 
   return (
     <>
-      <section className="bg-[var(--primary)] text-white py-14">
-        <div className="container-prose">
-          <h1 className="text-white mb-3">Descargas — Código fuente por fase</h1>
-          <p className="text-xl opacity-90 max-w-3xl">
-            22 scripts Python del pipeline científico, publicados para <strong>trazabilidad</strong> y <strong>replicabilidad</strong>.
-            Adapte las rutas de entrada y podrá reproducir el estudio.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        title="Descargas — Código fuente por fase"
+        subtitle="22 scripts Python del pipeline científico, publicados para trazabilidad y replicabilidad. Adapte las rutas de entrada y podrá reproducir el estudio."
+        image="wm_cuicocha.jpg"
+        overlayColor="rgba(31,95,168,0.82)"
+        credit="Imagen: Laguna de Cuicocha · Wikimedia Commons · CC BY-SA"
+      />
 
       <section className="container-prose py-8">
         <div className="card bg-amber-50 border-l-4 border-amber-400">
@@ -87,10 +88,15 @@ export default function DescargasPage() {
                       <div className="text-sm font-semibold break-words">{s.name}</div>
                       <div className="text-xs text-[var(--text-muted)]">{s.size_kb} KB · Python · sanitizado</div>
                     </div>
-                    <a href={`scripts/${encodeURIComponent(s.name)}`} download
-                      className="btn-primary text-sm flex-shrink-0">
+                    <RegisterGateLink
+                      href={assetEncoded(`/scripts/${s.name}`)}
+                      fileName={s.name}
+                      tipo="script"
+                      className="btn-primary text-sm flex-shrink-0"
+                      ariaLabel={`Descargar ${s.name}`}
+                    >
                       <Download size={14}/>
-                    </a>
+                    </RegisterGateLink>
                   </div>
                 ))}
               </div>

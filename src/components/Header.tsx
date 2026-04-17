@@ -1,12 +1,28 @@
 "use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { MENU, SITE } from "@/data/config";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ChevronDown } from "lucide-react";
 import { asset } from "@/lib/assets";
+
+function isActive(currentPath: string, slug: string): boolean {
+  if (slug === "/") return currentPath === "/" || currentPath === "";
+  return currentPath === slug || currentPath.startsWith(slug + "/");
+}
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const rawPath = usePathname() || "/";
+  // usePathname() en prod incluye basePath — lo quitamos para comparar contra slugs de MENU
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
+  const pathname = base && rawPath.startsWith(base) ? rawPath.slice(base.length) || "/" : rawPath;
+
+  const primary = MENU.slice(0, 6);
+  const secondary = MENU.slice(6);
+  const moreActive = secondary.some(m => isActive(pathname, m.slug));
+
   return (
     <header className="bg-[var(--primary)] text-white shadow-md sticky top-0 z-50">
       <div className="container-prose flex items-center justify-between py-3">
@@ -24,26 +40,51 @@ export default function Header() {
         <button className="md:hidden" onClick={() => setOpen(!open)} aria-label="menu">
           {open ? <X size={24}/> : <Menu size={24}/>}
         </button>
-        <nav className="hidden md:flex gap-1 text-sm">
-          {MENU.slice(0, 6).map(m => (
-            <Link key={m.slug} href={m.slug} className="px-3 py-2 rounded hover:bg-white/10 text-white no-underline">{m.label}</Link>
-          ))}
-          <div className="relative group">
-            <button className="px-3 py-2 rounded hover:bg-white/10">Más ▾</button>
-            <div className="absolute right-0 top-full mt-1 w-56 bg-white text-[var(--text)] rounded shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition">
-              {MENU.slice(6).map(m => (
-                <Link key={m.slug} href={m.slug} className="block px-4 py-2 hover:bg-gray-50 no-underline text-[var(--text)]">{m.label}</Link>
-              ))}
+        <nav className="hidden md:flex gap-1 text-sm items-center">
+          {primary.map(m => {
+            const active = isActive(pathname, m.slug);
+            return (
+              <Link key={m.slug} href={m.slug}
+                aria-current={active ? "page" : undefined}
+                className={`px-3 py-2 rounded text-white no-underline transition ${
+                  active ? "bg-white text-[var(--primary)] font-bold shadow" : "hover:bg-white/15"
+                }`}>{m.label}</Link>
+            );
+          })}
+          <div className="relative" onMouseEnter={() => setMoreOpen(true)} onMouseLeave={() => setMoreOpen(false)}>
+            <button
+              className={`px-3 py-2 rounded no-underline transition inline-flex items-center gap-1 ${
+                moreActive ? "bg-white text-[var(--primary)] font-bold shadow" : "hover:bg-white/15 text-white"
+              }`}>
+              Más <ChevronDown size={14}/>
+            </button>
+            <div className={`absolute right-0 top-full mt-1 w-60 bg-white text-[var(--text)] rounded shadow-xl transition ${moreOpen ? "opacity-100 visible" : "opacity-0 invisible"}`}>
+              {secondary.map(m => {
+                const active = isActive(pathname, m.slug);
+                return (
+                  <Link key={m.slug} href={m.slug}
+                    aria-current={active ? "page" : undefined}
+                    className={`block px-4 py-2 no-underline border-l-4 ${
+                      active ? "bg-[var(--bg)] text-[var(--primary)] font-bold border-[var(--primary)]" : "text-[var(--text)] border-transparent hover:bg-gray-50"
+                    }`}>{m.label}</Link>
+                );
+              })}
             </div>
           </div>
         </nav>
       </div>
       {open && (
         <nav className="md:hidden flex flex-col gap-1 bg-[var(--primary-dark)] px-4 pb-4">
-          {MENU.map(m => (
-            <Link key={m.slug} href={m.slug} onClick={() => setOpen(false)}
-              className="px-3 py-2 text-sm text-white no-underline hover:bg-white/10 rounded">{m.label}</Link>
-          ))}
+          {MENU.map(m => {
+            const active = isActive(pathname, m.slug);
+            return (
+              <Link key={m.slug} href={m.slug} onClick={() => setOpen(false)}
+                aria-current={active ? "page" : undefined}
+                className={`px-3 py-2 text-sm no-underline rounded ${
+                  active ? "bg-white text-[var(--primary)] font-bold" : "text-white hover:bg-white/15"
+                }`}>{m.label}</Link>
+            );
+          })}
         </nav>
       )}
     </header>

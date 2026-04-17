@@ -5,6 +5,7 @@ import { PRIORITY_COLORS } from "@/data/config";
 import IRChart from "@/components/IRChart";
 import { TrendingUp, Target, Wheat, Download } from "lucide-react";
 import PageHero from "@/components/PageHero";
+import Link from "next/link";
 
 export default function ResultadosPage() {
   const [cultSel, setCultSel] = useState("papa");
@@ -22,6 +23,20 @@ export default function ResultadosPage() {
       />
 
       <section className="container-prose py-10">
+        <div className="card bg-blue-50 border-l-4 border-blue-500 mb-8">
+          <h3 className="text-lg mb-2 flex items-center gap-2">¿Cómo leer esta página?</h3>
+          <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-2">
+            Los resultados se expresan como un <strong>Índice de Riesgo (IR)</strong> que va de <strong>0 (muy bajo)</strong>
+            a <strong>1 (muy alto)</strong>. Compara cómo le irá a cada cultivo en cada parroquia bajo distintos escenarios
+            climáticos futuros. La lectura más útil es <em>comparativa</em> — qué parroquias están más expuestas entre sí —
+            más que los valores absolutos.
+          </p>
+          <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+            <strong>SSP</strong> (1-2.6, 3-7.0, 5-8.5) son trayectorias internacionales de emisiones de gases de efecto
+            invernadero: van de <em>mitigación ambiciosa</em> (SSP1-2.6) a <em>emisiones altas sin mitigación</em> (SSP5-8.5).
+            Los <strong>horizontes</strong> (2021–2040, 2041–2060, 2061–2080) son ventanas temporales futuras.
+          </p>
+        </div>
         <div className="grid md:grid-cols-4 gap-4">
           <div className="card border-l-4 border-[var(--accent)]">
             <div className="text-xs uppercase tracking-wider text-[var(--text-muted)]">Rango de IR</div>
@@ -148,6 +163,18 @@ export default function ResultadosPage() {
       </section>
 
       <section className="container-prose py-10">
+        <h2 className="mb-4">Glosario rápido</h2>
+        <div className="grid md:grid-cols-2 gap-4 text-sm">
+          <div className="card"><strong>IR — Índice de Riesgo:</strong> valor entre 0 y 1 que integra peligro climático, exposición agrícola y susceptibilidad biofísica del cultivo. Se interpreta mejor como ranking relativo entre parroquias.</div>
+          <div className="card"><strong>SSP (Shared Socioeconomic Pathway):</strong> escenario internacional de emisiones. SSP1-2.6 (mitigación fuerte), SSP3-7.0 (rivalidad regional), SSP5-8.5 (uso intensivo de combustibles fósiles).</div>
+          <div className="card"><strong>Horizonte:</strong> ventana temporal futura de 20 años — 2021–2040 (cercano), 2041–2060 (medio), 2061–2080 (lejano).</div>
+          <div className="card"><strong>AUC-ROC:</strong> métrica de desempeño de los modelos (0,5 = azar, 1 = perfecto). Los 4 cultivos obtuvieron AUC entre 0,804 y 0,871.</div>
+          <div className="card"><strong>Random Forest:</strong> técnica de aprendizaje automático que combina muchos árboles de decisión. Se usó para estimar la aptitud climática de cada cultivo.</div>
+          <div className="card"><strong>Red Bayesiana:</strong> modelo probabilístico que integra peligro + exposición + susceptibilidad en el IR final, manejando la incertidumbre de forma explícita.</div>
+        </div>
+      </section>
+
+      <section className="container-prose py-10">
         <div className="card bg-gradient-to-br from-[var(--primary)] to-[var(--primary-dark)] text-white">
           <h3 className="text-white text-2xl mb-3 flex items-center gap-2"><Download/> Descarga los datos completos</h3>
           <p className="opacity-90 mb-4">
@@ -155,8 +182,12 @@ export default function ResultadosPage() {
             capa de priorización ejecutiva.
           </p>
           <div className="flex flex-wrap gap-2">
-            <a href="/datos" className="btn-primary bg-white text-[var(--primary)] hover:bg-gray-100">Datos abiertos</a>
-            <a href="/visor" className="btn-secondary border-white text-white hover:bg-white hover:text-[var(--primary)]">Visor cartográfico</a>
+            <Link href="/datos" className="inline-flex items-center gap-2 bg-white text-[var(--primary)] px-5 py-3 rounded-lg font-semibold hover:bg-gray-100 shadow">
+              Datos abiertos
+            </Link>
+            <Link href="/visor" className="inline-flex items-center gap-2 bg-white/15 border-2 border-white text-white px-5 py-3 rounded-lg font-semibold hover:bg-white hover:text-[var(--primary)]">
+              Visor cartográfico
+            </Link>
           </div>
         </div>
       </section>

@@ -4,6 +4,7 @@ import { Download, FileCode, Shield, Info, ExternalLink } from "lucide-react";
 import { assetEncoded } from "@/lib/assets";
 import RegisterGateLink from "@/components/RegisterGateLink";
 import PageHero from "@/components/PageHero";
+import ExternalLinkGate from "@/components/ExternalLinkGate";
 
 export const metadata = { title: "Descargas de scripts por fase · Geoportal Imbabura" };
 
@@ -112,10 +113,10 @@ export default function DescargasPage() {
             Para replicar el estudio completo (incluyendo datos intermedios), consulte el archivo Zenodo con DOI permanente:
           </p>
           <div className="flex flex-wrap gap-3">
-            <a href="https://doi.org/10.5281/zenodo.19288559" target="_blank" rel="noopener" className="btn-primary bg-white text-[var(--primary)] hover:bg-gray-100">
+            <ExternalLinkGate href="https://doi.org/10.5281/zenodo.19288559" className="inline-flex items-center gap-2 bg-white text-[var(--primary)] px-5 py-3 rounded-lg font-semibold hover:bg-gray-100 shadow">
               <ExternalLink size={16}/> Zenodo DOI 10.5281/zenodo.19288559
-            </a>
-            <Link href="/datos" className="btn-secondary border-white text-white hover:bg-white hover:text-[var(--primary)]">
+            </ExternalLinkGate>
+            <Link href="/datos" className="inline-flex items-center gap-2 bg-white/15 border-2 border-white text-white px-5 py-3 rounded-lg font-semibold hover:bg-white hover:text-[var(--primary)]">
               Volver a Datos Abiertos
             </Link>
           </div>

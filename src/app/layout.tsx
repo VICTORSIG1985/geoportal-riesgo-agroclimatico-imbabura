@@ -15,17 +15,20 @@ export const metadata: Metadata = {
   },
 };
 
-// Política de seguridad de contenido (CSP) — restringe orígenes de scripts, estilos, imágenes y fetches
+// Content Security Policy — balance entre seguridad y funcionalidad de ArcGIS/CartoDB
+// Nota: 'unsafe-inline' / 'unsafe-eval' son necesarios para MapLibre GL JS y Next.js export.
+// Se documenta abiertamente en GEOPORTAL_ENTREGA_FINAL.md como limitación conocida de GH Pages.
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://basemaps.cartocdn.com",
-  "style-src 'self' 'unsafe-inline' https://basemaps.cartocdn.com https://fonts.googleapis.com",
-  "img-src 'self' data: blob: https://www.arcgis.com https://services.arcgis.com https://services.arcgisonline.com https://basemaps.cartocdn.com https://licensebuttons.net https://tiles.arcgis.com https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://upload.wikimedia.org",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' https://www.arcgis.com https://services.arcgis.com https://*.arcgis.com https://api.anthropic.com https://nominatim.openstreetmap.org https://basemaps.cartocdn.com https://tiles.arcgis.com https://*.tile.openstreetmap.org",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.arcgis.com https://*.cartocdn.com",
+  "style-src 'self' 'unsafe-inline' https://*.cartocdn.com https://fonts.googleapis.com",
+  "img-src 'self' data: blob: https://*.arcgis.com https://*.arcgisonline.com https://*.cartocdn.com https://licensebuttons.net https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://upload.wikimedia.org https://commons.wikimedia.org",
+  "font-src 'self' data: https://fonts.gstatic.com https://*.cartocdn.com",
+  "connect-src 'self' https://*.arcgis.com https://*.arcgisonline.com https://*.cartocdn.com https://api.anthropic.com https://nominatim.openstreetmap.org https://tile.openstreetmap.org https://*.tile.openstreetmap.org",
+  "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",
-  "form-action 'self' https://services.arcgis.com",
+  "form-action 'self' https://*.arcgis.com",
   "object-src 'none'",
   "upgrade-insecure-requests",
 ].join("; ");

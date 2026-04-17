@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Database, Code, FileJson, Download, ExternalLink, Shield, Map, FileText, Info } from "lucide-react";
 import { SERVICES, SITE } from "@/data/config";
 import PageHero from "@/components/PageHero";
+import ExternalLinkGate from "@/components/ExternalLinkGate";
 
 export const metadata = { title: "Datos Abiertos · Geoportal Imbabura" };
 
@@ -89,18 +90,18 @@ export default function DatosPage() {
               Repositorio con el código completo, documentación metodológica (21 documentos ISO 19115) y el archivo de
               resultados autoritativo <code>riesgo_parroquial_20260226_172751.csv</code>.
             </p>
-            <a href={`https://github.com/${SITE.githubUser}/${SITE.githubRepo}`} target="_blank" rel="noopener" className="btn-primary">
+            <ExternalLinkGate href={`https://github.com/${SITE.githubUser}/${SITE.githubRepo}`} label="github-pipeline" className="btn-primary">
               <ExternalLink size={16}/> github.com/{SITE.githubUser}/{SITE.githubRepo}
-            </a>
+            </ExternalLinkGate>
           </div>
           <div className="card">
             <h3 className="text-xl mb-2">Zenodo — DOI permanente</h3>
             <p className="text-sm text-[var(--text-muted)] mb-3">
               Snapshot versionado citable académicamente. Incluye código, datos derivados, manuscrito y documentación.
             </p>
-            <a href={`https://doi.org/${SITE.doi}`} target="_blank" rel="noopener" className="btn-primary bg-[#1f5fa8] hover:bg-[#184781]">
+            <ExternalLinkGate href={`https://doi.org/${SITE.doi}`} label="zenodo-doi" className="inline-flex items-center gap-2 bg-[#1f5fa8] text-white px-5 py-3 rounded-lg font-semibold hover:bg-[#184781]">
               <ExternalLink size={16}/> doi.org/{SITE.doi}
-            </a>
+            </ExternalLinkGate>
           </div>
         </div>
       </section>

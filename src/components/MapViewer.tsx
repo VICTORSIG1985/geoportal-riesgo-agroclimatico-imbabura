@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { SERVICES, PRIORITY_COLORS } from "@/data/config";
-import { Layers, Filter, X, FileText, Search, Bookmark, Table, Info, Lock, Loader2, RefreshCw } from "lucide-react";
+import { Layers, Filter, X, FileText, Search, Bookmark, Table, Info, Lock, Loader2, RefreshCw, Share2 } from "lucide-react";
 
 type Cultivo = "papa" | "maiz" | "frejol" | "quinua";
 type SSP = "ssp126" | "ssp370" | "ssp585";
@@ -34,12 +34,26 @@ export default function MapViewer() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
 
+  // Leer estado inicial desde URL (si existe)
+  const initFromUrl = (() => {
+    if (typeof window === "undefined") return {};
+    const params = new URLSearchParams(window.location.search);
+    return {
+      modo: (params.get("modo") as Modo) || undefined,
+      cultivo: (params.get("cultivo") as Cultivo) || undefined,
+      ssp: (params.get("ssp") as SSP) || undefined,
+      horiz: (params.get("horiz") as Horizonte) || undefined,
+      codp: params.get("p") || undefined,
+    };
+  })();
+
   const [selected, setSelected] = useState<any | null>(null);
-  const [modo, setModo] = useState<Modo>("priorizacion");
-  const [cultivo, setCultivo] = useState<Cultivo>("papa");
-  const [ssp, setSsp] = useState<SSP>("ssp585");
-  const [horiz, setHoriz] = useState<Horizonte>("2061-2080");
+  const [modo, setModo] = useState<Modo>(initFromUrl.modo || "priorizacion");
+  const [cultivo, setCultivo] = useState<Cultivo>(initFromUrl.cultivo || "papa");
+  const [ssp, setSsp] = useState<SSP>(initFromUrl.ssp || "ssp585");
+  const [horiz, setHoriz] = useState<Horizonte>(initFromUrl.horiz || "2061-2080");
   const [opacidad, setOpacidad] = useState(0.78);
+  const [copied, setCopied] = useState(false);
 
   const [priorData, setPriorData] = useState<any | null>(null);
   const [riesgoData, setRiesgoData] = useState<any | null>(null);
@@ -197,6 +211,38 @@ export default function MapViewer() {
     m.setPaintProperty("prior-fill", "fill-opacity", opacidad);
     m.setPaintProperty("riesgo-fill", "fill-opacity", opacidad);
   }, [opacidad]);
+
+  // Sincronizar estado → URL (sin recargar)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams();
+    params.set("modo", modo);
+    if (modo === "analisis") {
+      params.set("cultivo", cultivo);
+      params.set("ssp", ssp);
+      params.set("horiz", horiz);
+    }
+    if (selected?.cod_parroq) params.set("p", selected.cod_parroq);
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, "", newUrl);
+  }, [modo, cultivo, ssp, horiz, selected]);
+
+  // Aplicar parroquia desde URL cuando cargan los datos
+  useEffect(() => {
+    if (!priorData || !initFromUrl.codp) return;
+    const f = (priorData.features as any[]).find(f => f.properties.cod_parroq === initFromUrl.codp);
+    if (f) zoomToParroquia(initFromUrl.codp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priorData]);
+
+  async function copyShareLink() {
+    if (typeof window === "undefined") return;
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
+  }
 
   // Refetch riesgo según filtros
   const refetchRiesgo = useCallback(async () => {
@@ -405,17 +451,32 @@ export default function MapViewer() {
             <input type="range" min={0.3} max={1} step={0.05} value={opacidad} onChange={e => setOpacidad(Number(e.target.value))} className="w-full"/>
           </div>
 
-          {/* Leyenda dinámica */}
+          {/* Leyenda dinámica — rampa continua IR en modo análisis */}
           <div className="pt-2 border-t border-[var(--border)]">
             <div className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-1">
-              Leyenda {modo==="priorizacion"?"· Prioridad final":"· Índice de Riesgo"}
+              Leyenda {modo==="priorizacion"?"· Prioridad final":"· Índice de Riesgo (IR)"}
             </div>
-            {Object.entries(PRIORITY_COLORS).map(([k, v]) => (
-              <div key={k} className="flex items-center gap-2 text-[11px] py-0.5">
-                <span className="w-5 h-4 rounded inline-block" style={{ background: v.hex, opacity: opacidad }}></span>
-                <span>{v.label}</span>
+            {modo === "priorizacion" ? (
+              Object.entries(PRIORITY_COLORS).map(([k, v]) => (
+                <div key={k} className="flex items-center gap-2 text-[11px] py-0.5">
+                  <span className="w-5 h-4 rounded inline-block" style={{ background: v.hex, opacity: opacidad }}></span>
+                  <span>{v.label}</span>
+                </div>
+              ))
+            ) : (
+              <div>
+                <div className="h-4 rounded mb-1" style={{
+                  background: "linear-gradient(90deg, #2166AC 0%, #67A9CF 33%, #FDDBC7 55%, #EF8A62 75%, #B2182B 100%)",
+                  opacity: opacidad
+                }}/>
+                <div className="flex justify-between text-[10px] text-[var(--text-muted)]">
+                  <span>0.0</span><span>0.40</span><span>0.45</span><span>0.55</span><span>0.65</span><span>1.0</span>
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)] mt-1">
+                  IR para <strong>{CULTLABEL[cultivo]}</strong> · {SSPLABEL[ssp]} · {horiz}
+                </div>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Tabla resumen sincronizada */}
@@ -437,7 +498,7 @@ export default function MapViewer() {
                   const v = modo==="priorizacion" ? p.ir_medio_final : p.ir;
                   return (
                     <li key={p.cod_parroq || i} className="flex justify-between cursor-pointer hover:bg-[var(--bg)] px-1 rounded"
-                      onClick={() => selectFeature(p)}>
+                      onClick={() => { if (p.cod_parroq) zoomToParroquia(p.cod_parroq); else selectFeature(p); }}>
                       <span className="truncate mr-1">{i+1}. {p.parroquia}</span>
                       <span className="font-mono font-semibold">{Number(v).toFixed(3)}</span>
                     </li>
@@ -446,6 +507,17 @@ export default function MapViewer() {
               </ul>
             </div>
           )}
+
+          {/* Compartir vista (URL con estado) */}
+          <div className="pt-2 border-t border-[var(--border)]">
+            <button onClick={copyShareLink}
+              className="w-full inline-flex items-center justify-center gap-1 text-xs bg-[var(--primary)] text-white px-3 py-2 rounded font-semibold hover:bg-[var(--primary-dark)]">
+              <Share2 size={12}/> {copied ? "Enlace copiado ✓" : "Compartir vista actual"}
+            </button>
+            <div className="text-[10px] text-[var(--text-muted)] mt-1 text-center">
+              URL con modo, filtros y parroquia seleccionada
+            </div>
+          </div>
 
           {/* Metadatos del visor */}
           <div className="pt-2 border-t border-[var(--border)] text-[10px] text-[var(--text-muted)] space-y-0.5">

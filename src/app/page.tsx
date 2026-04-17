@@ -127,9 +127,11 @@ export default function Home() {
               src="https://www.arcgis.com/sharing/rest/content/items/97b6b4fdb0934e878b591f85a574137f/data"
               alt="Mapa de priorización parroquial bajo SSP5-8.5"
               className="w-full h-auto"
+              loading="lazy"
             />
-            <div className="p-4 text-xs text-[var(--text-muted)]">
-              Figura 5 del manuscrito · <Link href="/galeria">ver galería completa</Link>
+            <div className="p-4 text-xs text-[var(--text-muted)] flex items-center justify-between gap-3 flex-wrap">
+              <span><strong>Figura 5</strong> del manuscrito</span>
+              <Link href="/galeria" className="text-[var(--primary)] font-semibold hover:underline">Ver galería completa →</Link>
             </div>
           </div>
         </div>

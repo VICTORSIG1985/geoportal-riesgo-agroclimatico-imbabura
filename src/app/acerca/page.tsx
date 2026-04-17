@@ -3,6 +3,7 @@ import { User, Book, Award, Mail, ExternalLink } from "lucide-react";
 import Avatar from "@/components/Avatar";
 import { asset } from "@/lib/assets";
 import PageHero from "@/components/PageHero";
+import ExternalLinkGate from "@/components/ExternalLinkGate";
 
 export const metadata = { title: "Acerca del Geoportal · Pinto Páez 2026" };
 
@@ -39,9 +40,9 @@ export default function AcercaPage() {
           <Award size={28} className="mb-3"/>
           <h3 className="text-white text-xl mb-2">DOI Permanente</h3>
           <div className="text-2xl font-bold font-mono">{SITE.doi}</div>
-          <a href={`https://doi.org/${SITE.doi}`} target="_blank" className="btn-primary bg-white text-[var(--primary)] mt-4 hover:bg-gray-100">
+          <ExternalLinkGate href={`https://doi.org/${SITE.doi}`} label="zenodo-acerca" className="inline-flex items-center gap-2 bg-white text-[var(--primary)] px-5 py-3 rounded-lg font-semibold mt-4 hover:bg-gray-100">
             <ExternalLink size={16}/> Abrir en Zenodo
-          </a>
+          </ExternalLinkGate>
         </div>
       </section>
 
@@ -78,6 +79,10 @@ export default function AcercaPage() {
         <h2 className="mb-4">Agradecimientos</h2>
         <div className="card">
           <p className="text-[var(--text-muted)] leading-relaxed">
+            Un agradecimiento especial al tutor de la investigación, <strong>MSc. Fernando Mauricio Pavón Cevallos</strong>
+            (<a href="mailto:fernando.pavon@ruminahui.gob.ec">fernando.pavon@ruminahui.gob.ec</a>), por su guía y supervisión
+            en el desarrollo de este trabajo.
+            <br/><br/>
             A la <strong>USGP</strong> por el marco académico e institucional; al equipo docente por la orientación metodológica;
             y a las instituciones proveedoras de datos públicos: <strong>BASD-CMIP6-PE</strong> (Fernandez-Palomino et al. 2024),
             <strong>GBIF</strong>, <strong>MapSPAM v2r0</strong> (IFPRI 2024), <strong>ESPAC 2024</strong> (INEC),

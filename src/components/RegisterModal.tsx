@@ -33,25 +33,45 @@ export default function RegisterModal({ open, onClose, onCompleted, pending }: P
   // Inicializar mapa (step 2)
   useEffect(() => {
     if (step !== 2 || !mapContainerRef.current || mapRef.current) return;
-    const m = new maplibregl.Map({
-      container: mapContainerRef.current,
-      style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
-      center: [lon ?? -78.2, lat ?? 0.35],
-      zoom: lat ? 9 : 5,
-      attributionControl: false,
-    });
-    m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
-    m.on("click", async (e) => {
-      const { lng, lat: la } = e.lngLat;
-      setLat(la); setLon(lng);
-      setGeoStatus("manual");
-      updateMarker(lng, la);
-      try { const { place, country } = await reverseGeocode(la, lng); setPlaceText(place); setCountry(country); } catch {}
-    });
-    mapRef.current = m;
-    if (lat && lon) updateMarker(lon, lat);
-    return () => { m.remove(); mapRef.current = null; };
+    // Retardo mínimo para que el contenedor tenga dimensiones correctas antes de iniciar
+    const timer = setTimeout(() => {
+      if (!mapContainerRef.current) return;
+      const m = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        center: [lon ?? -78.2, lat ?? 0.35],
+        zoom: lat ? 9 : 5,
+        attributionControl: false,
+      });
+      m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-left");
+      m.on("click", async (e) => {
+        const { lng, lat: la } = e.lngLat;
+        setLat(la); setLon(lng);
+        setGeoStatus("manual");
+        updateMarker(lng, la);
+        try { const { place, country } = await reverseGeocode(la, lng); setPlaceText(place); setCountry(country); } catch {}
+      });
+      mapRef.current = m;
+      // Forzar resize tras cargar para que los tiles pinten correctamente
+      m.on("load", () => { setTimeout(() => m.resize(), 120); });
+      if (lat && lon) {
+        m.on("load", () => { updateMarker(lon!, lat!); });
+      }
+    }, 80);
+    return () => {
+      clearTimeout(timer);
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  // Observar cambios de tamaño del contenedor del mapa (modal redimensionado)
+  useEffect(() => {
+    if (step !== 2 || !mapContainerRef.current) return;
+    const obs = new ResizeObserver(() => { mapRef.current?.resize(); });
+    obs.observe(mapContainerRef.current);
+    return () => obs.disconnect();
   }, [step]);
 
   function updateMarker(lng: number, la: number) {

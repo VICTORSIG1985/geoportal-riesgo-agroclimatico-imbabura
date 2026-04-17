@@ -124,7 +124,7 @@ export default function Home() {
           </div>
           <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-[var(--border)]">
             <img
-              src="https://www.arcgis.com/sharing/rest/content/items/97b6b4fdb0934e878b591f85a574137f/data"
+              src={asset("/img/figures/SINTESIS_priorizacion_parroquias.png")}
               alt="Mapa de priorización parroquial bajo SSP5-8.5"
               className="w-full h-auto"
               loading="lazy"

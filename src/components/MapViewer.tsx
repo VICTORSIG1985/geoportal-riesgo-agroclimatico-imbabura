@@ -8,7 +8,8 @@ import RegisterModal from "./RegisterModal";
 import { getRegistro, submitRegistro } from "@/lib/registro";
 
 type Cultivo = "papa" | "maiz" | "frejol" | "quinua";
-type SSP = "ssp126" | "ssp370" | "ssp585";
+/** Los valores REALES en el FS son 'SSP1-2.6', 'SSP3-7.0', 'SSP5-8.5' (con mayúsculas/puntuación). */
+type SSP = "SSP1-2.6" | "SSP3-7.0" | "SSP5-8.5";
 type Horizonte = "2021-2040" | "2041-2060" | "2061-2080";
 type Modo = "priorizacion" | "analisis";
 
@@ -28,7 +29,7 @@ async function fetchGeojson(url: string, where = "1=1") {
   return res.json();
 }
 
-const SSPLABEL: Record<SSP, string> = { ssp126: "SSP1-2.6", ssp370: "SSP3-7.0", ssp585: "SSP5-8.5" };
+const SSPLABEL: Record<SSP, string> = { "SSP1-2.6": "SSP1-2.6", "SSP3-7.0": "SSP3-7.0", "SSP5-8.5": "SSP5-8.5" };
 const CULTLABEL: Record<Cultivo, string> = { papa: "Papa", maiz: "Maíz", frejol: "Fréjol", quinua: "Quinua" };
 
 export default function MapViewer() {
@@ -40,10 +41,16 @@ export default function MapViewer() {
   const initFromUrl = (() => {
     if (typeof window === "undefined") return {};
     const params = new URLSearchParams(window.location.search);
+    // Compatibilidad con URLs antiguas: 'ssp126' → 'SSP1-2.6', etc.
+    const rawSsp = params.get("ssp");
+    const sspMap: Record<string, SSP> = {
+      "ssp126": "SSP1-2.6", "ssp370": "SSP3-7.0", "ssp585": "SSP5-8.5",
+      "SSP1-2.6": "SSP1-2.6", "SSP3-7.0": "SSP3-7.0", "SSP5-8.5": "SSP5-8.5",
+    };
     return {
       modo: (params.get("modo") as Modo) || undefined,
       cultivo: (params.get("cultivo") as Cultivo) || undefined,
-      ssp: (params.get("ssp") as SSP) || undefined,
+      ssp: (rawSsp && sspMap[rawSsp]) || undefined,
       horiz: (params.get("horiz") as Horizonte) || undefined,
       codp: params.get("p") || undefined,
     };
@@ -54,7 +61,7 @@ export default function MapViewer() {
   const [pendingFicha, setPendingFicha] = useState<{ url: string; name: string } | null>(null);
   const [modo, setModo] = useState<Modo>(initFromUrl.modo || "priorizacion");
   const [cultivo, setCultivo] = useState<Cultivo>(initFromUrl.cultivo || "papa");
-  const [ssp, setSsp] = useState<SSP>(initFromUrl.ssp || "ssp585");
+  const [ssp, setSsp] = useState<SSP>(initFromUrl.ssp || "SSP5-8.5");
   const [horiz, setHoriz] = useState<Horizonte>(initFromUrl.horiz || "2061-2080");
   const [opacidad, setOpacidad] = useState(0.78);
   const [copied, setCopied] = useState(false);
@@ -423,7 +430,7 @@ export default function MapViewer() {
                   ))}
                 </div>
               </div>
-              <button onClick={() => { setCultivo("papa"); setSsp("ssp585"); setHoriz("2061-2080"); }}
+              <button onClick={() => { setCultivo("papa"); setSsp("SSP5-8.5"); setHoriz("2061-2080"); }}
                 className="text-[10px] text-[var(--primary)] font-semibold hover:underline flex items-center gap-1">
                 <RefreshCw size={10}/> Restablecer filtros
               </button>

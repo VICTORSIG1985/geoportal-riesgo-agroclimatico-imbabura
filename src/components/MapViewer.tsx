@@ -26,7 +26,6 @@ async function fetchGeojson(url: string, where = "1=1") {
   const params = new URLSearchParams({
     where, outFields: "*", f: "geojson", outSR: "4326",
   });
-  // AbortController para evitar colgarse si el servicio demora
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 30_000);
   try {
@@ -36,6 +35,46 @@ async function fetchGeojson(url: string, where = "1=1") {
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Fetch SOLO atributos (sin geometría) del Feature Service.
+ * Mucho más rápido que pedir GeoJSON completo cuando ya tenemos los polígonos base.
+ * Devuelve un array de objetos con las propiedades.
+ */
+async function fetchAttributes(url: string, where: string, outFields: string): Promise<any[]> {
+  const params = new URLSearchParams({
+    where, outFields, f: "json", returnGeometry: "false",
+  });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20_000);
+  try {
+    const res = await fetch(`${url}/query?${params}`, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`FS ${res.status}`);
+    const data = await res.json();
+    return (data.features || []).map((f: any) => f.attributes || {});
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Clona el GeoJSON base inyectando atributos por cod_parroq.
+ * Devuelve un FeatureCollection con los polígonos originales + nuevas propiedades.
+ */
+function injectAttributes(baseFC: any, attrByCod: Record<string, any>): any {
+  if (!baseFC?.features) return baseFC;
+  return {
+    type: "FeatureCollection",
+    features: baseFC.features.map((f: any) => {
+      const cod = f.properties?.cod_parroq;
+      const extra = cod != null ? attrByCod[cod] : null;
+      return {
+        ...f,
+        properties: { ...f.properties, ...(extra || {}) },
+      };
+    }),
+  };
 }
 
 const SSPLABEL: Record<SSP, string> = { "SSP1-2.6": "SSP1-2.6", "SSP3-7.0": "SSP3-7.0", "SSP5-8.5": "SSP5-8.5" };
@@ -267,35 +306,50 @@ export default function MapViewer() {
     } catch {}
   }
 
-  // Carga los datos de riesgo filtrados por cultivo×SSP×horizonte (42 features por combinación).
-  // Usa caché en memoria para que la segunda visita a la misma combinación sea instantánea.
+  // Carga los atributos de riesgo por cultivo×SSP×horizonte (SIN geometría, rápido).
+  // Los combina con los 42 polígonos base que ya están cargados.
+  // La segunda visita a la misma combinación viene del caché.
   const applyFilters = useCallback(async () => {
-    const m = mapRef.current; if (!m || !m.getSource("riesgo")) return;
+    const m = mapRef.current;
+    if (!m || !m.getSource("riesgo") || !baseData) return;
+
     const key = `${cultivo}|${ssp}|${horiz}`;
-    const cached = riesgoCacheRef.current.get(key);
-    if (cached) {
-      setRiesgoData(cached);
-      (m.getSource("riesgo") as maplibregl.GeoJSONSource).setData(cached);
+    const cachedAttrs = riesgoCacheRef.current.get(key);
+
+    async function render(attrByCod: Record<string, any>) {
+      const fc = injectAttributes(baseData, attrByCod);
+      setRiesgoData(fc);
+      (m!.getSource("riesgo") as maplibregl.GeoJSONSource).setData(fc);
+    }
+
+    if (cachedAttrs) {
       setError(null);
+      await render(cachedAttrs);
       return;
     }
+
     setError(null);
     setLoading(`Cargando ${cultivo} · ${ssp} · ${horiz}...`);
     try {
       const where = `cultivo='${cultivo}' AND ssp='${ssp}' AND horizonte='${horiz}'`;
-      const data = await fetchGeojson(SERVICES.flRiesgoLong.url, where);
-      riesgoCacheRef.current.set(key, data);
-      setRiesgoData(data);
-      (m.getSource("riesgo") as maplibregl.GeoJSONSource).setData(data);
+      const attrs = await fetchAttributes(
+        SERVICES.flRiesgoLong.url,
+        where,
+        "cod_parroq,cultivo,ssp,horizonte,ir,pb,pm,pa,eex,evu,parroquia,canton"
+      );
+      const byCod: Record<string, any> = {};
+      for (const a of attrs) if (a.cod_parroq != null) byCod[a.cod_parroq] = a;
+      riesgoCacheRef.current.set(key, byCod);
+      await render(byCod);
       setLoading(null);
     } catch (err: any) {
       setLoading(null);
       const msg = err?.name === "AbortError"
-        ? "El servicio cartográfico tardó demasiado. Intente nuevamente en unos segundos."
+        ? "El servicio tardó demasiado. Intente nuevamente en unos segundos."
         : `No se pudo cargar la capa analítica: ${err.message || err}`;
       setError(msg);
     }
-  }, [cultivo, ssp, horiz]);
+  }, [cultivo, ssp, horiz, baseData]);
   useEffect(() => { if (modo === "analisis") applyFilters(); }, [cultivo, ssp, horiz, modo, applyFilters]);
 
   // Bookmarks

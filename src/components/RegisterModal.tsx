@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { X, MapPin, Loader2, CheckCircle2, AlertCircle, Shield } from "lucide-react";
-import { AVISO_LEGAL_V1, CONSENT_VERSION, RegistroLocal, reverseGeocode, setRegistro, submitRegistro, uuid } from "@/lib/registro";
+import { AVISO_LEGAL_V1, CONSENT_VERSION, RegistroLocal, reverseGeocode, setRegistro, submitRegistro, uuid, isValidEmail, sanitizeInput } from "@/lib/registro";
 
 interface Props {
   open: boolean;
@@ -25,6 +25,10 @@ export default function RegisterModal({ open, onClose, onCompleted, pending }: P
   const [geoStatus, setGeoStatus] = useState<"idle" | "locating" | "ok" | "manual" | "err">("idle");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Honeypot: campo oculto. Los bots suelen rellenarlo; los humanos no lo ven.
+  const [hp_url, setHpUrl] = useState("");
+  // Registro del tiempo de apertura para detectar envíos demasiado rápidos (bots)
+  const openedAtRef = useRef<number>(Date.now());
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -97,8 +101,13 @@ export default function RegisterModal({ open, onClose, onCompleted, pending }: P
   }
 
   function validate1(): string | null {
-    if (!nombre.trim() || nombre.trim().length < 3) return "Ingrese su nombre completo.";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Correo electrónico no válido.";
+    const name = sanitizeInput(nombre, 120);
+    if (!name || name.length < 3) return "Ingrese su nombre completo.";
+    if (!isValidEmail(email.trim())) return "Correo electrónico no válido.";
+    // Honeypot trap — si el bot rellenó el campo oculto, rechazamos silenciosamente
+    if (hp_url.length > 0) return "Validación fallida. Si usted no es un bot, recargue la página.";
+    // Tiempo mínimo de interacción: menos de 2 s = probable bot
+    if (Date.now() - openedAtRef.current < 2000) return "Complete los campos y vuelva a intentarlo.";
     return null;
   }
 
@@ -154,6 +163,13 @@ export default function RegisterModal({ open, onClose, onCompleted, pending }: P
         <div className="p-5 overflow-y-auto flex-1">
           {step === 1 && (
             <div className="space-y-4">
+              {/* Honeypot: campo oculto para detectar bots. No visible para usuarios humanos. */}
+              <input
+                type="text" name="website_url" tabIndex={-1} autoComplete="off"
+                value={hp_url} onChange={(e) => setHpUrl(e.target.value)}
+                aria-hidden="true"
+                style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }}
+              />
               <div className="bg-indigo-50 border-l-4 border-indigo-400 p-3 rounded-r text-sm">
                 <strong>¿Por qué este registro?</strong> Para cumplir la <strong>Ley Orgánica de Protección de Datos Personales</strong> del
                 Ecuador y generar estadísticas de uso académico del geoportal. Los datos se almacenan en ArcGIS Online

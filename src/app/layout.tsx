@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     default: "Geoportal Riesgo Agroclimático — Imbabura, Ecuador",
     template: "%s · Geoportal Riesgo Agroclimático Imbabura",
   },
-  description: "Portal institucional de acceso al riesgo agroclimático de cultivos andinos en las 42 parroquias de Imbabura bajo escenarios climáticos CMIP6. Integración Random Forest + Red Bayesiana. USGP 2026.",
+  description: "Portal de acceso al riesgo agroclimático de cultivos andinos en las 42 parroquias de Imbabura bajo escenarios climáticos CMIP6. Integración Random Forest + Red Bayesiana. USGP 2026.",
   authors: [{ name: "Víctor Hugo Pinto Páez" }],
   keywords: ["geoportal", "Imbabura", "riesgo agroclimático", "CMIP6", "Random Forest", "Red Bayesiana", "USGP"],
   robots: { index: true, follow: true },
@@ -39,6 +39,7 @@ export const metadata: Metadata = {
   other: {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), payment=(), geolocation=(self)",
   },
 };
 

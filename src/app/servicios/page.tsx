@@ -27,7 +27,7 @@ export default function Servicios() {
       desc: "Consulta en lenguaje natural sobre la metodología, cultivos, escenarios y resultados. Retrieval-Augmented Generation sobre el manuscrito completo (Natural Hazards, 2026).",
       tech: "Vercel AI SDK + Claude API · retrieval sobre texto del manuscrito" },
     { href: "/acerca", icon: Info, color: "#4A5568", title: "Acerca del Geoportal",
-      desc: "Autor, institución, manuscrito de referencia, cita sugerida, licencia de uso, agradecimientos y contacto institucional.",
+      desc: "Autor, institución, manuscrito de referencia, cita sugerida, licencia de uso, agradecimientos y contacto.",
       tech: "ORCID · DOI Zenodo · manuscrito Natural Hazards" },
   ];
 

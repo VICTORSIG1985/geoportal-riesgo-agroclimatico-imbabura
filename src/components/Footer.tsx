@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="md:col-span-2">
           <h3 className="text-lg font-bold mb-3">{SITE.title}</h3>
           <p className="opacity-90 leading-relaxed">
-            Portal institucional de acceso al resultado de la investigación de Maestría en Prevención y Gestión
+            Portal de acceso al resultado de la investigación de Maestría en Prevención y Gestión
             de Riesgos (USGP 2026) sobre el riesgo agroclimático de cultivos andinos en las 42 parroquias de
             Imbabura bajo escenarios CMIP6.
           </p>

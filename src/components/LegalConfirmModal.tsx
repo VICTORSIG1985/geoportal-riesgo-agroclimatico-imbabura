@@ -33,7 +33,7 @@ export default function LegalConfirmModal({ open, onCancel, onAccept, fileName, 
           </p>
           <div className="bg-indigo-50 border-l-4 border-indigo-400 p-3 rounded-r text-xs">
             Conforme a la <strong>Ley Orgánica de Protección de Datos Personales</strong> del Ecuador, esta acción queda
-            <strong> registrada</strong> en la base de datos institucional del geoportal con fines estadísticos y de mejora del
+            <strong> registrada</strong> en la base de datos del geoportal con fines estadísticos y de mejora del
             servicio. Se guardarán: su identidad registrada {registroEmail ? <>(<code className="text-[11px]">{registroEmail}</code>)</> : null},
             la ubicación indicada al registrarse, el archivo descargado y la fecha.
             <br/><br/>

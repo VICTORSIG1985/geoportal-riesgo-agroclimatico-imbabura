@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { AVISO_LEGAL_V1, CONSENT_VERSION, getRegistro, submitRegistro, setRegistro, uuid } from "@/lib/registro";
+import { AVISO_LEGAL_V1, CONSENT_VERSION, getRegistro, submitRegistro, setRegistro, uuid, isValidEmail } from "@/lib/registro";
 import { X, Mail, Shield, Loader2, AlertCircle, ExternalLink } from "lucide-react";
 
 interface Props {
@@ -41,7 +41,7 @@ export default function ExternalLinkGate({ href, className, children, label }: P
 
   async function submit() {
     setErr(null);
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setErr("Correo electrónico no válido."); return; }
+    if (!isValidEmail(email)) { setErr("Correo electrónico no válido."); return; }
     if (!consent) { setErr("Debe aceptar el aviso de privacidad para continuar."); return; }
     setBusy(true);
     const reg = {

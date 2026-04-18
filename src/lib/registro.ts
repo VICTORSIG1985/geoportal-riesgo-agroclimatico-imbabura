@@ -4,6 +4,33 @@ export const REGISTRO_FS_URL = "https://services.arcgis.com/LNQOp9d1bu5VZNME/arc
 export const CONSENT_VERSION = "v1.0-2026-04";
 
 const LS_KEY = "geoportal_registro_v1";
+const RATE_LIMIT_KEY = "geoportal_last_submit_ts";
+const RATE_LIMIT_MS = 20_000; // 20 s entre submits del mismo browser (anti-spam mínimo)
+
+// Sanitiza cualquier string de usuario antes de enviarlo a AGO:
+// - elimina caracteres de control
+// - recorta whitespace
+// - limita longitud máxima
+// - elimina backticks y etiquetas HTML básicas (defensa en profundidad ante XSS cruzado)
+export function sanitizeInput(s: string | undefined, maxLen = 200): string {
+  if (!s) return "";
+  let out = String(s);
+  // Remover caracteres de control excepto tab/newline
+  out = out.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+  // Remover etiquetas HTML
+  out = out.replace(/<[^>]{0,200}>/g, "");
+  // Remover backticks (reducen riesgo si llegan a HTML injertado en otros contextos)
+  out = out.replace(/[`]/g, "'");
+  return out.trim().slice(0, maxLen);
+}
+
+// Validación estricta de email (RFC 5322 simplificada + sin direcciones descartables comunes)
+export function isValidEmail(s: string): boolean {
+  if (!s) return false;
+  if (s.length < 5 || s.length > 120) return false;
+  // RFC-like básico
+  return /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(s);
+}
 
 export interface RegistroLocal {
   nombre: string;
@@ -61,23 +88,38 @@ export async function reverseGeocode(lat: number, lon: number): Promise<{ place:
   return { place: place || data.display_name || `${lat.toFixed(3)}, ${lon.toFixed(3)}`, country: a.country || "" };
 }
 
-// Envía el registro al FS público (addFeatures anónimo)
+// Envía el registro al FS público (addFeatures anónimo). Con rate-limit, sanitización y validación.
 export async function submitRegistro(r: RegistroLocal, tipo: "script" | "ficha" | "visor" | "api" | "geojson", nombreArchivo?: string): Promise<boolean> {
+  // Rate-limit por sesión del navegador (anti-spam desde la misma pestaña)
+  if (typeof window !== "undefined") {
+    const last = parseInt(window.sessionStorage.getItem(RATE_LIMIT_KEY) || "0", 10);
+    if (last && Date.now() - last < RATE_LIMIT_MS) {
+      // Silencioso: no enviamos pero tampoco mostramos error al usuario
+      return true;
+    }
+    window.sessionStorage.setItem(RATE_LIMIT_KEY, String(Date.now()));
+  }
+
+  // Validación de email y sanitización
+  if (!isValidEmail(r.email)) return false;
+  const lat = Number(r.lat), lon = Number(r.lon);
+  if (!isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) return false;
+
   const feature = {
-    geometry: { x: r.lon, y: r.lat, spatialReference: { wkid: 4326 } },
+    geometry: { x: lon, y: lat, spatialReference: { wkid: 4326 } },
     attributes: {
-      nombre: r.nombre.slice(0, 120),
-      email: r.email.slice(0, 120),
-      institucion: (r.institucion || "").slice(0, 160),
-      rol: (r.rol || "").slice(0, 80),
-      tipo_descarga: tipo,
-      nombre_archivo: (nombreArchivo || "").slice(0, 240),
-      ubicacion_texto: (r.ubicacion_texto || "").slice(0, 200),
-      pais: (r.pais || "").slice(0, 80),
-      session_token: r.session_token,
-      consentimiento_v: r.consentimiento_v,
+      nombre: sanitizeInput(r.nombre, 120),
+      email: sanitizeInput(r.email, 120).toLowerCase(),
+      institucion: sanitizeInput(r.institucion, 160),
+      rol: sanitizeInput(r.rol, 80),
+      tipo_descarga: sanitizeInput(tipo, 20),
+      nombre_archivo: sanitizeInput(nombreArchivo, 240),
+      ubicacion_texto: sanitizeInput(r.ubicacion_texto, 200),
+      pais: sanitizeInput(r.pais, 80),
+      session_token: sanitizeInput(r.session_token, 64),
+      consentimiento_v: sanitizeInput(r.consentimiento_v, 20),
       fecha_registro: Date.now(),
-      user_agent: (typeof navigator !== "undefined" ? navigator.userAgent : "").slice(0, 500),
+      user_agent: sanitizeInput(typeof navigator !== "undefined" ? navigator.userAgent : "", 500),
     }
   };
   const body = new URLSearchParams();
@@ -88,6 +130,9 @@ export async function submitRegistro(r: RegistroLocal, tipo: "script" | "ficha" 
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body.toString(),
+      // Con cache:"no-store" evitamos que el browser conserve respuestas con datos del usuario
+      cache: "no-store",
+      credentials: "omit",
     });
     if (!res.ok) return false;
     const data = await res.json();

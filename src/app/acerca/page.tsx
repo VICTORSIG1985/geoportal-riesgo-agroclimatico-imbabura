@@ -12,7 +12,7 @@ export default function AcercaPage() {
     <>
       <PageHero
         title="Acerca del Geoportal"
-        subtitle="Marco institucional, autor, cita sugerida, manuscrito de referencia y contacto."
+        subtitle="Marco académico, autor, cita sugerida, manuscrito de referencia y contacto."
         image="geoparque_Mapa_Geoparques.jpg"
         overlayColor="rgba(10,53,88,0.45)"
         credit="Imagen: Geoparques Mundiales UNESCO · geoparque.imbabura.gob.ec"
@@ -84,7 +84,7 @@ export default function AcercaPage() {
             (<a href="mailto:fernando.pavon@ruminahui.gob.ec">fernando.pavon@ruminahui.gob.ec</a>),
             por su guía y supervisión en el desarrollo de este trabajo.
             <br/><br/>
-            A la <strong>USGP</strong> por el marco académico e institucional; al equipo docente por la orientación metodológica;
+            A la <strong>USGP</strong> por el marco académico; al equipo docente por la orientación metodológica;
             y a las instituciones proveedoras de datos públicos: <strong>BASD-CMIP6-PE</strong> (Fernandez-Palomino et al. 2024),
             <strong>GBIF</strong>, <strong>MapSPAM v2r0</strong> (IFPRI 2024), <strong>ESPAC 2024</strong> (INEC),
             <strong>CONALI/INEC</strong>. El autor revisó todas las decisiones metodológicas, validó los resultados y asume

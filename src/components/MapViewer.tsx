@@ -23,10 +23,25 @@ const BOOKMARKS: { id: string; name: string; bounds: [[number, number], [number,
 ];
 
 async function fetchGeojson(url: string, where = "1=1") {
-  const params = new URLSearchParams({ where, outFields: "*", f: "geojson", outSR: "4326" });
+  // AGO por defecto limita a 2000 features; pasamos resultRecordCount alto para asegurar los 1512.
+  const params = new URLSearchParams({
+    where, outFields: "*", f: "geojson", outSR: "4326",
+    resultRecordCount: "5000",
+  });
   const res = await fetch(`${url}/query?${params}`);
   if (!res.ok) throw new Error(`FS ${res.status}`);
   return res.json();
+}
+
+function filterRiesgo(all: any, cultivo: string, ssp: string, horiz: string) {
+  if (!all?.features) return all;
+  return {
+    ...all,
+    features: (all.features as any[]).filter(f => {
+      const p = f.properties || {};
+      return p.cultivo === cultivo && p.ssp === ssp && p.horizonte === horiz;
+    })
+  };
 }
 
 const SSPLABEL: Record<SSP, string> = { "SSP1-2.6": "SSP1-2.6", "SSP3-7.0": "SSP3-7.0", "SSP5-8.5": "SSP5-8.5" };
@@ -36,6 +51,8 @@ export default function MapViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
+  // Cache en memoria con los 1.512 features para filtrado instantáneo local
+  const allRiesgoRef = useRef<any | null>(null);
 
   // Leer estado inicial desde URL (si existe)
   const initFromUrl = (() => {
@@ -124,9 +141,12 @@ export default function MapViewer() {
           paint: { "line-color": "#0A3558", "line-width": 3 },
           filter: ["==", ["get", "cod_parroq"], "___none___"] });
 
-        // Riesgo analítico (modo análisis) — empieza oculto
-        setLoading("Cargando capa analítica...");
-        const riesgo = await fetchGeojson(SERVICES.flRiesgoLong.url, `cultivo='${cultivo}' AND ssp='${ssp}' AND horizonte='${horiz}'`);
+        // Riesgo analítico: pre-descargar TODOS los 1512 registros una sola vez
+        // para que el filtrado por cultivo × SSP × horizonte sea instantáneo en cliente.
+        setLoading("Precargando 1.512 inferencias para filtrado instantáneo...");
+        const riesgoAll = await fetchGeojson(SERVICES.flRiesgoLong.url);
+        allRiesgoRef.current = riesgoAll;
+        const riesgo = filterRiesgo(riesgoAll, cultivo, ssp, horiz);
         setRiesgoData(riesgo);
         map.addSource("riesgo", { type: "geojson", data: riesgo });
         map.addLayer({ id: "riesgo-fill", type: "fill", source: "riesgo",
@@ -255,20 +275,26 @@ export default function MapViewer() {
     } catch {}
   }
 
-  // Refetch riesgo según filtros
-  const refetchRiesgo = useCallback(async () => {
+  // Filtrado LOCAL instantáneo sobre el cache (sin llamada de red).
+  // Si por alguna razón el cache no está, hacemos fetch on-demand como fallback.
+  const applyFilters = useCallback(async () => {
     const m = mapRef.current; if (!m || !m.getSource("riesgo")) return;
-    setLoading("Actualizando capa analítica...");
     try {
-      const data = await fetchGeojson(SERVICES.flRiesgoLong.url, `cultivo='${cultivo}' AND ssp='${ssp}' AND horizonte='${horiz}'`);
+      let all = allRiesgoRef.current;
+      if (!all) {
+        setLoading("Cargando capa analítica...");
+        all = await fetchGeojson(SERVICES.flRiesgoLong.url);
+        allRiesgoRef.current = all;
+        setLoading(null);
+      }
+      const data = filterRiesgo(all, cultivo, ssp, horiz);
       setRiesgoData(data);
       (m.getSource("riesgo") as maplibregl.GeoJSONSource).setData(data);
-      setLoading(null);
     } catch (err: any) {
-      setError(`No se pudo actualizar: ${err.message}`); setLoading(null);
+      setError(`No se pudo aplicar el filtro: ${err.message}`); setLoading(null);
     }
   }, [cultivo, ssp, horiz]);
-  useEffect(() => { if (modo === "analisis") refetchRiesgo(); }, [cultivo, ssp, horiz, modo, refetchRiesgo]);
+  useEffect(() => { if (modo === "analisis") applyFilters(); }, [cultivo, ssp, horiz, modo, applyFilters]);
 
   // Bookmarks
   function goTo(bm: typeof BOOKMARKS[number]) {
@@ -369,9 +395,18 @@ export default function MapViewer() {
         <div className="p-5 space-y-4">
           <div>
             <h2 className="text-xl mb-1 flex items-center gap-2"><Layers size={20}/> Visor Cartográfico</h2>
+            <details className="text-xs bg-indigo-50 border border-indigo-200 rounded p-2 mb-1" open>
+              <summary className="cursor-pointer font-semibold text-indigo-800">📘 ¿Cómo usar este visor?</summary>
+              <div className="mt-2 text-[var(--text-muted)] space-y-1">
+                <p><strong>Modo Priorización</strong>: muestra la clasificación final de cada parroquia (Muy Alta / Alta / Alerta / Monitoreo / Favorable). Ideal para lectura rápida.</p>
+                <p><strong>Modo Análisis</strong>: permite filtrar por cultivo (papa, maíz, fréjol, quinua), escenario climático (SSP) y periodo de tiempo (horizonte) para ver el riesgo específico.</p>
+                <p><strong>Hover</strong> sobre un polígono: tooltip breve. <strong>Click</strong>: abre ficha con datos completos y descarga del PDF.</p>
+                <p><strong>Zonas de interés</strong>: accesos directos a Intag, Ibarra, Otavalo, Chota, Urcuquí.</p>
+              </div>
+            </details>
             <div className="text-xs text-[var(--text-muted)] bg-amber-50 border border-amber-200 rounded p-2 flex gap-1 items-start">
               <Lock size={12} className="mt-0.5 flex-shrink-0"/>
-              <span>Modo <strong>solo lectura</strong>. Click en una parroquia → ficha. Hover → tooltip.</span>
+              <span>Modo <strong>solo lectura</strong>. El mapa no se puede editar.</span>
             </div>
           </div>
 

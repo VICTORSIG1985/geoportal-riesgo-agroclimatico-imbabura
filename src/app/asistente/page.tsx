@@ -35,6 +35,11 @@ function retrieve(query: string, topK = 3) {
 const SYSTEM_PROMPT = `Eres el asistente científico del Geoportal Riesgo Agroclimático de Imbabura (Pinto Páez, 2026, USGP), manuscrito sometido a Natural Hazards (Springer). Respondes en español, con rigor académico y tono profesional. Tus respuestas se basan EXCLUSIVAMENTE en la información del manuscrito y del sistema. Si el contexto no contiene la respuesta, indica honestamente que no hay información y sugiere consultar la página Resultados o Datos Abiertos. Nunca inventes números ni referencias. Cita métricas textuales del manuscrito cuando estén disponibles.`;
 
 async function askClaude(apiKey: string, model: string, query: string, context: typeof KB): Promise<string> {
+  // Validación básica de la clave
+  if (!apiKey || !apiKey.startsWith("sk-ant-")) {
+    throw new Error("La clave de API no parece válida. Debe empezar con 'sk-ant-'. Obténgala en console.anthropic.com.");
+  }
+
   const ctxText = context.map((c, i) => `[Fragmento ${i+1} · ${c.category}] ${c.q}\n${c.a}`).join("\n\n");
   const body = {
     model,
@@ -44,22 +49,38 @@ async function askClaude(apiKey: string, model: string, query: string, context: 
       { role: "user", content: `Contexto del manuscrito:\n\n${ctxText || "(sin contexto relevante)"}\n\nPregunta del usuario: ${query}\n\nResponde en español, citando datos específicos cuando existan en el contexto.` }
     ],
   };
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify(body),
-  });
+  let res: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify(body),
+    });
+  } catch (netErr: any) {
+    throw new Error(`No se pudo conectar con api.anthropic.com. Verifique su conexión a internet. (${netErr.message})`);
+  }
   if (!res.ok) {
-    const t = await res.text();
-    throw new Error(`Claude API ${res.status}: ${t.slice(0, 200)}`);
+    const txt = await res.text();
+    let detail = txt.slice(0, 300);
+    try {
+      const json = JSON.parse(txt);
+      detail = json?.error?.message || detail;
+    } catch {}
+    if (res.status === 401) throw new Error(`Clave inválida o revocada. Revise console.anthropic.com.`);
+    if (res.status === 429) throw new Error(`Límite de uso alcanzado o créditos insuficientes en su cuenta Anthropic.`);
+    if (res.status === 400 && /model/i.test(detail)) throw new Error(`Modelo no disponible: ${model}. Pruebe con Haiku 4.5.`);
+    throw new Error(`Claude API ${res.status}: ${detail}`);
   }
   const data = await res.json();
-  return data.content?.[0]?.text || "(respuesta vacía)";
+  // La respuesta puede tener múltiples bloques; concatenamos todos los de texto
+  const blocks = Array.isArray(data?.content) ? data.content : [];
+  const text = blocks.filter((b: any) => b?.type === "text").map((b: any) => b.text).join("\n").trim();
+  return text || "(respuesta vacía — pruebe con otra pregunta o modelo)";
 }
 
 interface Msg {

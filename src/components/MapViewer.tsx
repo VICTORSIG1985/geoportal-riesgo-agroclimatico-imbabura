@@ -23,25 +23,19 @@ const BOOKMARKS: { id: string; name: string; bounds: [[number, number], [number,
 ];
 
 async function fetchGeojson(url: string, where = "1=1") {
-  // AGO por defecto limita a 2000 features; pasamos resultRecordCount alto para asegurar los 1512.
   const params = new URLSearchParams({
     where, outFields: "*", f: "geojson", outSR: "4326",
-    resultRecordCount: "5000",
   });
-  const res = await fetch(`${url}/query?${params}`);
-  if (!res.ok) throw new Error(`FS ${res.status}`);
-  return res.json();
-}
-
-function filterRiesgo(all: any, cultivo: string, ssp: string, horiz: string) {
-  if (!all?.features) return all;
-  return {
-    ...all,
-    features: (all.features as any[]).filter(f => {
-      const p = f.properties || {};
-      return p.cultivo === cultivo && p.ssp === ssp && p.horizonte === horiz;
-    })
-  };
+  // AbortController para evitar colgarse si el servicio demora
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30_000);
+  try {
+    const res = await fetch(`${url}/query?${params}`, { signal: ctrl.signal });
+    if (!res.ok) throw new Error(`FS ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 const SSPLABEL: Record<SSP, string> = { "SSP1-2.6": "SSP1-2.6", "SSP3-7.0": "SSP3-7.0", "SSP5-8.5": "SSP5-8.5" };
@@ -51,8 +45,9 @@ export default function MapViewer() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const popupRef = useRef<maplibregl.Popup | null>(null);
-  // Cache en memoria con los 1.512 features para filtrado instantáneo local
-  const allRiesgoRef = useRef<any | null>(null);
+  // Cache de resultados por combinación (key = "cultivo|ssp|horiz"); cada uno tiene 42 features.
+  // Evita pedir los 1.512 de una vez (timeout 504 en AGO) y el segundo acceso a la misma combinación es instantáneo.
+  const riesgoCacheRef = useRef<Map<string, any>>(new Map());
 
   // Leer estado inicial desde URL (si existe)
   const initFromUrl = (() => {
@@ -141,14 +136,11 @@ export default function MapViewer() {
           paint: { "line-color": "#0A3558", "line-width": 3 },
           filter: ["==", ["get", "cod_parroq"], "___none___"] });
 
-        // Riesgo analítico: pre-descargar TODOS los 1512 registros una sola vez
-        // para que el filtrado por cultivo × SSP × horizonte sea instantáneo en cliente.
-        setLoading("Precargando 1.512 inferencias para filtrado instantáneo...");
-        const riesgoAll = await fetchGeojson(SERVICES.flRiesgoLong.url);
-        allRiesgoRef.current = riesgoAll;
-        const riesgo = filterRiesgo(riesgoAll, cultivo, ssp, horiz);
-        setRiesgoData(riesgo);
-        map.addSource("riesgo", { type: "geojson", data: riesgo });
+        // Capa analítica: empezamos vacía; los datos se piden por combinación (cultivo×SSP×horizonte)
+        // sólo cuando el usuario entra al modo Análisis. Esto evita el timeout 504 al pedir los 1.512.
+        const emptyFC: any = { type: "FeatureCollection", features: [] };
+        setRiesgoData(emptyFC);
+        map.addSource("riesgo", { type: "geojson", data: emptyFC });
         map.addLayer({ id: "riesgo-fill", type: "fill", source: "riesgo",
           layout: { visibility: "none" },
           paint: {
@@ -275,23 +267,33 @@ export default function MapViewer() {
     } catch {}
   }
 
-  // Filtrado LOCAL instantáneo sobre el cache (sin llamada de red).
-  // Si por alguna razón el cache no está, hacemos fetch on-demand como fallback.
+  // Carga los datos de riesgo filtrados por cultivo×SSP×horizonte (42 features por combinación).
+  // Usa caché en memoria para que la segunda visita a la misma combinación sea instantánea.
   const applyFilters = useCallback(async () => {
     const m = mapRef.current; if (!m || !m.getSource("riesgo")) return;
+    const key = `${cultivo}|${ssp}|${horiz}`;
+    const cached = riesgoCacheRef.current.get(key);
+    if (cached) {
+      setRiesgoData(cached);
+      (m.getSource("riesgo") as maplibregl.GeoJSONSource).setData(cached);
+      setError(null);
+      return;
+    }
+    setError(null);
+    setLoading(`Cargando ${cultivo} · ${ssp} · ${horiz}...`);
     try {
-      let all = allRiesgoRef.current;
-      if (!all) {
-        setLoading("Cargando capa analítica...");
-        all = await fetchGeojson(SERVICES.flRiesgoLong.url);
-        allRiesgoRef.current = all;
-        setLoading(null);
-      }
-      const data = filterRiesgo(all, cultivo, ssp, horiz);
+      const where = `cultivo='${cultivo}' AND ssp='${ssp}' AND horizonte='${horiz}'`;
+      const data = await fetchGeojson(SERVICES.flRiesgoLong.url, where);
+      riesgoCacheRef.current.set(key, data);
       setRiesgoData(data);
       (m.getSource("riesgo") as maplibregl.GeoJSONSource).setData(data);
+      setLoading(null);
     } catch (err: any) {
-      setError(`No se pudo aplicar el filtro: ${err.message}`); setLoading(null);
+      setLoading(null);
+      const msg = err?.name === "AbortError"
+        ? "El servicio cartográfico tardó demasiado. Intente nuevamente en unos segundos."
+        : `No se pudo cargar la capa analítica: ${err.message || err}`;
+      setError(msg);
     }
   }, [cultivo, ssp, horiz]);
   useEffect(() => { if (modo === "analisis") applyFilters(); }, [cultivo, ssp, horiz, modo, applyFilters]);

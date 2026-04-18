@@ -56,7 +56,7 @@ DECISIONES METODOLÓGICAS:
       Referencia: Wisz et al. (2008). Diversity and Distributions, 14(5), 763-773.
 
 EJECUCIÓN:
-  %runfile 'D:/POSGRADOS/TESIS/03_SCRIPTS/python/SCRIPT_05A_DESCARGA_OCURRENCIAS_GBIF.py' --wdir
+  %runfile '<RUTA_LOCAL>' --wdir
 ======================================================================
 """
 

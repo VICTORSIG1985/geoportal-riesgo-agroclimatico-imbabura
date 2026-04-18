@@ -63,7 +63,7 @@ DECISIONES METODOLÓGICAS:
       tienen estos 16 índices calculados por 03F.
 
 EJECUCIÓN:
-  %runfile 'D:/POSGRADOS/TESIS/03_SCRIPTS/python/SCRIPT_05B_EXTRACCION_CLIMATICA_DATASET_RF.py' --wdir
+  %runfile '<RUTA_LOCAL>' --wdir
 ======================================================================
 """
 

@@ -69,7 +69,7 @@ DEPENDENCIAS:
   pip install matplotlib geopandas pandas numpy --break-system-packages
 
 EJECUCIÓN:
-  %runfile 'D:/POSGRADOS/TESIS/03_SCRIPTS/python/SCRIPT_09_FICHAS_PARROQUIALES.py'
+  %runfile '<RUTA_LOCAL>'
 
 ===============================================================================
 """

@@ -158,7 +158,7 @@ class Config:
     )
 
     # --- Rutas ---
-    BASE_DIR: Path = Path(r"D:/POSGRADOS/TESIS/Prevención_de_Riesgos")
+    BASE_DIR: Path = Path(r"<RUTA_LOCAL>")
     DATASETS_DIR: Path = field(default=None)
     OUTPUT_DIR: Path = field(default=None)
     REPORTES_DIR: Path = field(default=None)
@@ -233,7 +233,7 @@ class Config:
 
     def __post_init__(self):
         if self.DATASETS_DIR is None:
-            self.DATASETS_DIR = Path(r"D:/POSGRADOS/TESIS/02_DATOS/sdm_training")
+            self.DATASETS_DIR = Path(r"<RUTA_LOCAL>")
         if self.OUTPUT_DIR is None:
             self.OUTPUT_DIR = self.BASE_DIR / "04_RESULTADOS" / "fase4_modelamiento" / "random_forest"
         if self.REPORTES_DIR is None:

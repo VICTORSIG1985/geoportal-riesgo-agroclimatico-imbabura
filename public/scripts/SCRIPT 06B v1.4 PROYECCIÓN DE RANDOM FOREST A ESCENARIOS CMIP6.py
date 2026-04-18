@@ -117,7 +117,7 @@ class Config:
     CULTIVOS: List[str] = field(default_factory=lambda: ['papa', 'maiz', 'frejol', 'quinua'])
 
     def __post_init__(self):
-        for c in [Path(r"<RUTA_LOCAL>"), Path(r"D:/POSGRADOS/TESIS")]:
+        for c in [Path(r"<RUTA_LOCAL>"), Path(r"<RUTA_LOCAL>")]:
             if (c / "02_DATOS").exists():
                 self.BASE_DIR = c
                 break
@@ -125,7 +125,7 @@ class Config:
             self.BASE_DIR = Path(r"<RUTA_LOCAL>")
 
         for c in [Path(r"<RUTA_LOCAL>"),
-                   Path(r"D:/POSGRADOS/TESIS/Prevención_de_Riesgos"),
+                   Path(r"<RUTA_LOCAL>"),
                    self.BASE_DIR]:
             if (c / "04_RESULTADOS").exists():
                 self.BASE_PREV = c

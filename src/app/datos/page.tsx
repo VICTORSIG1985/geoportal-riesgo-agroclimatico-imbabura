@@ -53,12 +53,11 @@ export default function DatosPage() {
                   </div>
                 </div>
               </div>
-              <div className="mt-4 grid sm:grid-cols-4 gap-2">
+              <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-5 gap-2">
                 <DataDownloadGate
                   sourceUrl={`${L.url}/query?where=1%3D1&outFields=*&f=geojson`}
                   fileName={`${L.title}.geojson`}
-                  format="geojson"
-                  tipo="geojson"
+                  format="geojson" tipo="geojson"
                   className="btn-primary text-sm justify-center"
                   ariaLabel={`Descargar ${L.title} GeoJSON`}
                 >
@@ -66,24 +65,31 @@ export default function DatosPage() {
                 </DataDownloadGate>
                 <DataDownloadGate
                   sourceUrl={`${L.url}/query?where=1%3D1&outFields=*&f=geojson`}
+                  fileName={`${L.title}.csv`}
+                  format="csv" tipo="geojson"
+                  className="btn-secondary text-sm justify-center"
+                  ariaLabel={`Descargar ${L.title} CSV`}
+                >
+                  <FileDown size={14}/> CSV (Excel)
+                </DataDownloadGate>
+                <DataDownloadGate
+                  sourceUrl={`${L.url}/query?where=1%3D1&outFields=*&f=geojson`}
                   fileName={`${L.title}.md`}
-                  format="md"
-                  tipo="geojson"
+                  format="md" tipo="geojson"
                   mdTitle={`Datos — ${L.title}`}
                   className="btn-secondary text-sm justify-center"
                   ariaLabel={`Descargar ${L.title} Markdown`}
                 >
-                  <FileDown size={14}/> Markdown (tabla)
+                  <FileDown size={14}/> Markdown
                 </DataDownloadGate>
                 <DataDownloadGate
                   sourceUrl={`${L.url}?f=json`}
                   fileName={`${L.title}_metadata.json`}
-                  format="json"
-                  tipo="geojson"
+                  format="json" tipo="geojson"
                   className="btn-secondary text-sm justify-center"
                   ariaLabel={`Descargar metadatos ${L.title}`}
                 >
-                  <FileJson size={14}/> Metadatos JSON
+                  <FileJson size={14}/> Metadatos
                 </DataDownloadGate>
                 <Link href="/visor" className="btn-secondary text-sm justify-center">
                   <Map size={14}/> Abrir en visor

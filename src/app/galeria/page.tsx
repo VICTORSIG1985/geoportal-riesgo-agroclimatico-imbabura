@@ -1,13 +1,37 @@
 "use client";
 import { useState } from "react";
 import { FIGURES, GROUPS, figureUrl, Figure } from "@/data/figures";
-import { X, Download } from "lucide-react";
+import { X, Download, Lock } from "lucide-react";
 import PageHero from "@/components/PageHero";
+import RegisterModal from "@/components/RegisterModal";
+import { getRegistro, submitRegistro } from "@/lib/registro";
 
 export default function Galeria() {
   const [group, setGroup] = useState<string>("Todos");
   const [lightbox, setLightbox] = useState<Figure | null>(null);
+  const [regOpen, setRegOpen] = useState(false);
+  const [pendingFig, setPendingFig] = useState<Figure | null>(null);
   const shown = group === "Todos" ? FIGURES : FIGURES.filter(f => f.group === group);
+
+  function doDownload(fig: Figure) {
+    const a = document.createElement("a");
+    a.href = figureUrl(fig);
+    a.download = fig.file;
+    a.target = "_blank"; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  function handleDownload(fig: Figure, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const reg = getRegistro();
+    if (reg) {
+      submitRegistro(reg, "ficha", fig.file).catch(() => {});
+      doDownload(fig);
+      return;
+    }
+    setPendingFig(fig);
+    setRegOpen(true);
+  }
   return (
     <>
       <PageHero
@@ -62,12 +86,25 @@ export default function Galeria() {
             <div className="text-xs uppercase tracking-wider opacity-70">{lightbox.group}</div>
             <h3 className="text-xl font-bold text-white">{lightbox.title}</h3>
             <p className="opacity-90 my-2">{lightbox.caption}</p>
-            <a href={figureUrl(lightbox)} download className="inline-flex items-center gap-2 bg-white text-[var(--primary)] px-4 py-2 rounded-lg font-semibold mt-2">
-              <Download size={16}/> Descargar PNG
-            </a>
+            <button onClick={(e) => handleDownload(lightbox, e)}
+              className="inline-flex items-center gap-2 bg-white text-[var(--primary)] px-4 py-2 rounded-lg font-semibold mt-2 hover:bg-gray-100">
+              <Lock size={12} className="opacity-70"/> <Download size={16}/> Descargar PNG
+            </button>
+            <p className="text-[11px] text-white/70 mt-2">🔒 Descarga sujeta a registro único (LOPDP Ecuador)</p>
           </div>
         </div>
       )}
+
+      <RegisterModal
+        open={regOpen}
+        onClose={() => { setRegOpen(false); setPendingFig(null); }}
+        onCompleted={() => {
+          setRegOpen(false);
+          if (pendingFig) doDownload(pendingFig);
+          setPendingFig(null);
+        }}
+        pending={pendingFig ? { tipo: "ficha", name: pendingFig.file } : null}
+      />
     </>
   );
 }

@@ -4,6 +4,8 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { SERVICES, PRIORITY_COLORS } from "@/data/config";
 import { Layers, Filter, X, FileText, Search, Bookmark, Table, Info, Lock, Loader2, RefreshCw, Share2 } from "lucide-react";
+import RegisterModal from "./RegisterModal";
+import { getRegistro, submitRegistro } from "@/lib/registro";
 
 type Cultivo = "papa" | "maiz" | "frejol" | "quinua";
 type SSP = "ssp126" | "ssp370" | "ssp585";
@@ -48,6 +50,8 @@ export default function MapViewer() {
   })();
 
   const [selected, setSelected] = useState<any | null>(null);
+  const [regOpen, setRegOpen] = useState(false);
+  const [pendingFicha, setPendingFicha] = useState<{ url: string; name: string } | null>(null);
   const [modo, setModo] = useState<Modo>(initFromUrl.modo || "priorizacion");
   const [cultivo, setCultivo] = useState<Cultivo>(initFromUrl.cultivo || "papa");
   const [ssp, setSsp] = useState<SSP>(initFromUrl.ssp || "ssp585");
@@ -336,6 +340,22 @@ export default function MapViewer() {
     }
   }, [modo, priorData, riesgoData, cultivo, ssp, horiz]);
 
+  function doFichaDownload(url: string, name: string) {
+    const a = document.createElement("a");
+    a.href = url; a.download = name; a.target = "_blank"; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  function handleFichaDownload(url: string, name: string) {
+    const reg = getRegistro();
+    if (reg) {
+      submitRegistro(reg, "ficha", name).catch(() => {});
+      doFichaDownload(url, name);
+      return;
+    }
+    setPendingFicha({ url, name });
+    setRegOpen(true);
+  }
+
   return (
     <div className="flex h-[calc(100vh-64px)]" onContextMenu={(e) => e.preventDefault()}>
       <aside className="w-[380px] bg-white border-r border-[var(--border)] overflow-y-auto flex-shrink-0">
@@ -558,9 +578,10 @@ export default function MapViewer() {
                   <p className="text-[11px] mt-1 bg-[var(--bg)] p-2 rounded"><em>{selected.mensaje_priorizacion}</em></p>
                 )}
                 {selected.ficha_url && (
-                  <a href={selected.ficha_url} target="_blank" rel="noopener" className="btn-primary text-xs mt-2 inline-flex items-center gap-1">
-                    <FileText size={12}/> Descargar ficha PDF
-                  </a>
+                  <button onClick={() => handleFichaDownload(selected.ficha_url, `Ficha_${selected.parroquia || "parroquia"}.pdf`)}
+                    className="btn-primary text-xs mt-2 inline-flex items-center gap-1">
+                    <Lock size={10} className="opacity-70"/> <FileText size={12}/> Descargar ficha PDF
+                  </button>
                 )}
               </div>
             </div>
@@ -583,6 +604,17 @@ export default function MapViewer() {
           </div>
         )}
       </div>
+
+      <RegisterModal
+        open={regOpen}
+        onClose={() => { setRegOpen(false); setPendingFicha(null); }}
+        onCompleted={() => {
+          setRegOpen(false);
+          if (pendingFicha) doFichaDownload(pendingFicha.url, pendingFicha.name);
+          setPendingFicha(null);
+        }}
+        pending={pendingFicha ? { tipo: "ficha", name: pendingFicha.name } : null}
+      />
     </div>
   );
 }

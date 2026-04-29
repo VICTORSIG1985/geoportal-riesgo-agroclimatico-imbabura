@@ -1,4 +1,4 @@
-import { Microscope, Cpu, Network, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Microscope, Cpu, Network, CheckCircle2, AlertTriangle, Info } from "lucide-react";
 import PipelineDiagram from "@/components/PipelineDiagram";
 import DAGDiagram from "@/components/DAGDiagram";
 import PageHero from "@/components/PageHero";
@@ -23,12 +23,42 @@ export default function MetodologiaPage() {
       desc: "Red Bayesiana con pgmpy v0.1.25; DAG de 7 nodos y 6 aristas. IR = 0·P(Bajo) + 0.5·P(Medio) + 1·P(Alto). 1.512 inferencias (42 × 4 × 3 × 3), sin valores nulos." },
   ];
 
+  // Tabla principal — fuente: metricas_rf_20260428_202552.csv (Script 06 v1.2.0)
   const metricas = [
-    { cultivo: "Papa", auc: "0,871", tss: "0,603", oob: "0,169", top: "dias_estres_papa_anual (ΔAUC 0,021 ± 0,003)" },
-    { cultivo: "Quinua", auc: "0,867", tss: "0,614", oob: "0,179", top: "dias_secos_anual (ΔAUC 0,015)" },
-    { cultivo: "Fréjol", auc: "0,859", tss: "0,574", oob: "0,174", top: "dias_secos_anual (ΔAUC 0,020)" },
-    { cultivo: "Maíz", auc: "0,804", tss: "0,511", oob: "0,252", top: "dias_secos_anual (ΔAUC 0,049)" },
+    { cultivo: "Papa",   auc: "0,871", aucSig: "0,071", tss: "0,667", tssSig: "0,139", kappa: "0,630", oob: "0,186", top: "dias_estres_papa_anual (ΔAUC 0,021 ± 0,003)" },
+    { cultivo: "Quinua", auc: "0,867", aucSig: "0,056", tss: "0,625", tssSig: "0,094", kappa: "0,608", oob: "0,208", top: "dias_secos_anual (ΔAUC 0,015)" },
+    { cultivo: "Fréjol", auc: "0,859", aucSig: "0,040", tss: "0,583", tssSig: "0,069", kappa: "0,580", oob: "0,186", top: "dias_secos_anual (ΔAUC 0,020)" },
+    { cultivo: "Maíz",   auc: "0,804", aucSig: "0,067", tss: "0,525", tssSig: "0,128", kappa: "0,478", oob: "0,252", top: "dias_secos_anual (ΔAUC 0,049)" },
   ];
+
+  // Tabla de blindaje — fuente: metricas_rf_20260428_202552.csv (Script 06 v1.2.0)
+  const blindaje = [
+    { cultivo: "Papa",   aucPr: "0,755", mcc: "0,657", mccSig: "0,115", f1: "0,801", f1Sig: "0,050", brier: "0,137" },
+    { cultivo: "Quinua", aucPr: "0,816", mcc: "0,640", mccSig: "0,059", f1: "0,814", f1Sig: "0,053", brier: "0,145" },
+    { cultivo: "Fréjol", aucPr: "0,750", mcc: "0,580", mccSig: "0,097", f1: "0,738", f1Sig: "0,099", brier: "0,147" },
+    { cultivo: "Maíz",   aucPr: "0,637", mcc: "0,509", mccSig: "0,107", f1: "0,708", f1Sig: "0,035", brier: "0,173" },
+  ];
+
+  // Matrices de confusión — fuente: metricas_rf_20260428_202552.csv (Script 06 v1.2.0)
+  const confusion = [
+    { cultivo: "Papa (n=902)",   tp: "342", tn: "390", fp: "150", fn: "20",  sens: "0,945", spec: "0,722" },
+    { cultivo: "Quinua (n=245)", tp: "107", tn: "89",  fp: "44",  fn: "5",   sens: "0,955", spec: "0,669" },
+    { cultivo: "Fréjol (n=957)", tp: "266", tn: "502", fp: "99",  fn: "90",  sens: "0,747", spec: "0,835" },
+    { cultivo: "Maíz (n=2.062)", tp: "668", tn: "843", fp: "456", fn: "95",  sens: "0,876", spec: "0,649" },
+  ];
+
+  const tooltips: Record<string, string> = {
+    "AUC-ROC": "Área bajo la curva ROC. Mide la capacidad del modelo para distinguir presencias de pseudo-ausencias independientemente del umbral de clasificación. Valores > 0,75 = bueno; > 0,80 = muy bueno (Fielding y Bell 1997).",
+    "TSS": "True Skill Statistic = Sensibilidad + Especificidad − 1. Estándar en modelos de distribución de especies. Umbral mínimo ≥ 0,50 (Allouche et al. 2006). El umbral de clasificación usado maximiza el TSS sobre las predicciones de los 5 pliegues espaciales.",
+    "Kappa": "Kappa de Cohen: acuerdo ajustado por azar entre predicciones y observaciones.",
+    "OOB Error": "Error estimado sobre muestras fuera de bolsa. No requiere conjunto de prueba separado. Estimación interna del modelo final entrenado con todos los datos.",
+    "AUC-PR": "Precisión promedio. Más informativa que AUC-ROC cuando las ausencias son pseudo-ausencias generadas por muestreo de fondo (Saito y Rehmsmeier 2015). Valores más conservadores pero más honestos.",
+    "MCC": "Coeficiente de correlación de Matthews. Pondera las cuatro celdas de la matriz de confusión (TP, TN, FP, FN). Considerado la métrica más robusta para clasificación binaria (Chicco y Jurman 2020). Rango: −1 a +1.",
+    "F1": "Media armónica de precisión y recall. Estándar en aprendizaje automático. Complementa al TSS desde la perspectiva de ML.",
+    "Brier": "Calibración de las probabilidades. Mide qué tan bien calibradas están las probabilidades producidas por el Random Forest. Rango: 0 (perfecto) a 1. Brier < 0,20 en todos los cultivos confirma que las probabilidades son confiables antes de su ingreso a la Red Bayesiana.",
+    "Sensibilidad": "Porcentaje de presencias reales que el modelo clasifica correctamente: TP / (TP + FN). Alta sensibilidad significa que el modelo raramente pierde un sitio apto real.",
+    "Especificidad": "Porcentaje de ausencias reales que el modelo clasifica correctamente: TN / (TN + FP).",
+  };
 
   return (
     <>
@@ -91,16 +121,20 @@ export default function MetodologiaPage() {
         </div>
       </section>
 
+      {/* ===== DESEMPEÑO RANDOM FOREST ===== */}
       <section className="container-prose py-10">
         <h2 className="mb-6 flex items-center gap-3"><Microscope className="text-[var(--primary)]"/> Desempeño Random Forest</h2>
+
+        {/* Tabla principal */}
         <div className="card p-0 overflow-hidden">
           <table className="data">
             <thead>
               <tr>
                 <th>Cultivo</th>
-                <th>AUC-ROC</th>
-                <th>TSS</th>
-                <th>OOB Error</th>
+                <th title={tooltips["AUC-ROC"]}>AUC-ROC (σ) <Info className="inline w-3 h-3 opacity-50"/></th>
+                <th title={tooltips["TSS"]}>TSS (σ) <Info className="inline w-3 h-3 opacity-50"/></th>
+                <th title={tooltips["Kappa"]}>Kappa <Info className="inline w-3 h-3 opacity-50"/></th>
+                <th title={tooltips["OOB Error"]}>OOB Error <Info className="inline w-3 h-3 opacity-50"/></th>
                 <th>Variable más importante</th>
               </tr>
             </thead>
@@ -108,8 +142,9 @@ export default function MetodologiaPage() {
               {metricas.map(m => (
                 <tr key={m.cultivo}>
                   <td className="font-bold">{m.cultivo}</td>
-                  <td>{m.auc}</td>
-                  <td>{m.tss}</td>
+                  <td>{m.auc} <span className="text-xs text-[var(--text-muted)]">(±{m.aucSig})</span></td>
+                  <td>{m.tss} <span className="text-xs text-[var(--text-muted)]">(±{m.tssSig})</span></td>
+                  <td>{m.kappa}</td>
                   <td>{m.oob}</td>
                   <td className="text-sm font-mono">{m.top}</td>
                 </tr>
@@ -118,9 +153,115 @@ export default function MetodologiaPage() {
           </table>
         </div>
         <p className="text-sm text-[var(--text-muted)] mt-3">
-          Umbrales de aceptación: AUC ≥ 0,75 (Fielding & Bell 1997) · TSS ≥ 0,50 (Allouche et al. 2006) · OOB ≤ 0,30.
-          Los 4 modelos cumplen. Validación cruzada espacial k=5 con bloques de 2° de latitud. Fuente: Tabla 4 del manuscrito.
+          σ = desviación estándar entre pliegues · Umbrales de aceptación: AUC ≥ 0,75 (Fielding &amp; Bell 1997) · TSS ≥ 0,50 (Allouche et al. 2006) · OOB ≤ 0,30.
+          Los 4 modelos cumplen. Validación cruzada espacial k=5 con bloques de 2° de latitud. Fuente: metricas_rf_20260428_202552.csv (Script 06 v1.2.0 · Tabla 4 del manuscrito).
         </p>
+
+        {/* Blindaje métrico — sección expandible */}
+        <details className="mt-6 card p-0 overflow-hidden group">
+          <summary className="flex items-center justify-between px-5 py-4 cursor-pointer select-none bg-slate-50 hover:bg-slate-100 transition-colors font-semibold text-[var(--primary)]">
+            <span className="flex items-center gap-2">
+              <Microscope className="w-4 h-4"/>
+              Detalles técnicos — blindaje métrico (AUC-PR, MCC, F1, Brier Score)
+            </span>
+            <span className="text-xs font-normal text-[var(--text-muted)]">click para expandir</span>
+          </summary>
+
+          <div className="px-5 py-5 space-y-6">
+            <p className="text-sm text-[var(--text-muted)]">
+              Métricas adicionales calculadas por el Script 06 v1.2.0 para blindar la credibilidad del modelo
+              frente a revisores científicos. Reportadas en la Tabla 4 y Online Resource 1 del manuscrito (Natural Hazards, en revisión).
+            </p>
+
+            {/* Tabla de blindaje */}
+            <div>
+              <h4 className="font-semibold mb-2 text-sm uppercase tracking-wider text-[var(--text-muted)]">Métricas de blindaje</h4>
+              <div className="overflow-x-auto">
+                <table className="data w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th>Cultivo</th>
+                      <th title={tooltips["AUC-PR"]}>AUC-PR <Info className="inline w-3 h-3 opacity-50"/></th>
+                      <th title={tooltips["MCC"]}>MCC (σ) <Info className="inline w-3 h-3 opacity-50"/></th>
+                      <th title={tooltips["F1"]}>F1 (σ) <Info className="inline w-3 h-3 opacity-50"/></th>
+                      <th title={tooltips["Brier"]}>Brier Score <Info className="inline w-3 h-3 opacity-50"/></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {blindaje.map(b => (
+                      <tr key={b.cultivo}>
+                        <td className="font-bold">{b.cultivo}</td>
+                        <td>{b.aucPr}</td>
+                        <td>{b.mcc} <span className="text-xs text-[var(--text-muted)]">(±{b.mccSig})</span></td>
+                        <td>{b.f1} <span className="text-xs text-[var(--text-muted)]">(±{b.f1Sig})</span></td>
+                        <td>{b.brier}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-xs text-[var(--text-muted)] mt-2">
+                Brier Score &lt; 0,20 en todos los cultivos confirma que las probabilidades del RF están bien calibradas
+                antes de su ingreso a la Red Bayesiana. Fuente: metricas_rf_20260428_202552.csv.
+              </p>
+            </div>
+
+            {/* Nota VIF */}
+            <div className="p-4 bg-blue-50 border-l-4 border-blue-300 rounded-r text-sm text-[var(--text-muted)]">
+              <strong>Multicolinealidad (VIF):</strong> El diagnóstico mostró dependencia lineal perfecta entre ET₀ media diaria
+              y ET₀ anual, y entre déficit hídrico diario y anual. Esto es esperado: las versiones diaria y anual de la misma variable
+              son linealmente dependientes por construcción. Random Forest es robusto a este tipo de multicolinealidad
+              y los 16 predictores se retuvieron. La importancia por permutación se usa como diagnóstico descriptivo,
+              no para inferencia causal.
+            </div>
+
+            {/* Matrices de confusión */}
+            <div>
+              <h4 className="font-semibold mb-2 text-sm uppercase tracking-wider text-[var(--text-muted)]">Matrices de confusión</h4>
+              <div className="overflow-x-auto">
+                <table className="data w-full text-sm">
+                  <thead>
+                    <tr>
+                      <th>Cultivo</th>
+                      <th title="Verdaderos positivos">TP</th>
+                      <th title="Verdaderos negativos">TN</th>
+                      <th title="Falsos positivos">FP</th>
+                      <th title="Falsos negativos">FN</th>
+                      <th title={tooltips["Sensibilidad"]}>Sensibilidad <Info className="inline w-3 h-3 opacity-50"/></th>
+                      <th title={tooltips["Especificidad"]}>Especificidad <Info className="inline w-3 h-3 opacity-50"/></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {confusion.map(c => (
+                      <tr key={c.cultivo}>
+                        <td className="font-bold">{c.cultivo}</td>
+                        <td>{c.tp}</td>
+                        <td>{c.tn}</td>
+                        <td>{c.fp}</td>
+                        <td>{c.fn}</td>
+                        <td>{c.sens}</td>
+                        <td>{c.spec}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Glosario de métricas */}
+            <div>
+              <h4 className="font-semibold mb-3 text-sm uppercase tracking-wider text-[var(--text-muted)]">Glosario de métricas</h4>
+              <dl className="grid md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+                {Object.entries(tooltips).map(([k, v]) => (
+                  <div key={k}>
+                    <dt className="font-semibold text-[var(--primary)]">{k}</dt>
+                    <dd className="text-[var(--text-muted)] leading-snug">{v}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          </div>
+        </details>
       </section>
 
       <section className="container-prose py-10">

@@ -1,25 +1,13 @@
-"""
-Script publicado como parte del Geoportal Riesgo Agroclimático — Imbabura, Ecuador
-Pinto Páez, V. H. (2026). https://doi.org/10.5281/zenodo.19288559
-Licencia: CC BY 4.0
-
-NOTA: este archivo fue sanitizado para publicación pública.
-- Credenciales (API keys, tokens, service accounts) removidas → <REDACTED_*>
-- Rutas absolutas locales sustituidas por <RUTA_LOCAL>
-Antes de ejecutar, configure sus propias rutas de entrada/salida y credenciales.
-
-Archivo original: SCRIPT 06 ENTRENAMIENTO DE RANDOM FOREST + ANÁLISIS SHAP.py
-"""
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 ===============================================================================
 SCRIPT 06: ENTRENAMIENTO DE RANDOM FOREST + ANÁLISIS SHAP
 ===============================================================================
-Versión: 1.1.0
-Fecha: 2026-02-26
+Versión: 1.2.0
+Fecha: 2026-04-28
 Autor: Víctor Hugo Pinto Páez
+ORCID: 0009-0001-5573-8294
 
 Tesis: Riesgo agroclimático de cultivos andinos bajo escenarios CMIP6
        en la provincia de Imbabura: modelamiento de distribución de
@@ -27,6 +15,28 @@ Tesis: Riesgo agroclimático de cultivos andinos bajo escenarios CMIP6
 
 Universidad: San Gregorio de Portoviejo
 Programa: Maestría en Prevención y Gestión de Riesgos
+
+DOI: https://doi.org/10.5281/zenodo.19288559
+
+===============================================================================
+NOTA DE SANITIZACIÓN
+===============================================================================
+Este script ha sido sanitizado para publicación científica (CC BY 4.0).
+Las rutas absolutas locales han sido reemplazadas por marcadores <RUTA_LOCAL>.
+Antes de ejecutar, configure:
+
+  1. BASE_DIR   → Directorio raíz de resultados (donde se guardan modelos,
+                   métricas, shap, reportes de auditoría).
+  2. DATASETS_DIR → Directorio con los datasets de entrenamiento RF generados
+                    por el Script 05B/05C (archivos: dataset_rf_{cultivo}_*.csv).
+
+Ejemplo (Linux/Mac):
+  BASE_DIR = Path("/home/usuario/tesis/04_resultados")
+  DATASETS_DIR = Path("/home/usuario/tesis/02_datos/sdm_training")
+
+Ejemplo (Windows):
+  BASE_DIR = Path(r"C:/proyectos/tesis/04_resultados")
+  DATASETS_DIR = Path(r"C:/proyectos/tesis/02_datos/sdm_training")
 
 ===============================================================================
 
@@ -37,7 +47,7 @@ Programa: Maestría en Prevención y Gestión de Riesgos
      - Maíz: Tmax > 35°C (FAO-56)
      - Fréjol: Tmax > 30°C (CIAT)
      - Quinua: Tmax > 32°C (Jacobsen, 2003)
-   
+
    El modelo de cada cultivo usa SU variable de estrés correspondiente.
    Total: 12 variables comunes + 1 específica = 13 predictores por modelo.
 
@@ -46,7 +56,7 @@ Programa: Maestría en Prevención y Gestión de Riesgos
      - tmax_media_anual: régimen térmico máximo
      - tmin_media_anual: limitante altitudinal (Hijmans et al., 2003)
      - rango_termico_diurno: ≡ bio02 WorldClim, fotosíntesis/respiración
-   
+
    Total final: 15 comunes + 1 específica = 16 predictores por modelo.
 
 3. VARIABLES ELIMINADAS: La variable genérica 'dias_estres_termico_anual'
@@ -54,6 +64,9 @@ Programa: Maestría en Prevención y Gestión de Riesgos
 
 4. SHAP: Corregido error de compatibilidad "Per-column arrays must each
    be 1-dimensional" convirtiendo datos a numpy float64 explícito.
+
+5. BLINDAJE MÉTRICO (v1.2.0): Añadidos AUC-PR, MCC, F1, Brier Score
+   y diagnóstico de multicolinealidad (VIF) para validación ante revisores.
 
 ===============================================================================
 JUSTIFICACIÓN CIENTÍFICA DE PARÁMETROS
@@ -93,6 +106,7 @@ Lundberg, S.M., et al. (2020). Nature Machine Intelligence, 2(1), 56-67.
 Mi, C., et al. (2017). Ecological Informatics, 38, 13-18.
 Probst, P., & Boulesteix, A.L. (2018). JMLR, 18, 1-18.
 Roberts, D.R., et al. (2017). Ecography, 40(8), 913-929.
+Saito, T., & Rehmsmeier, M. (2015). PLoS ONE, 10, e0118432.
 Valavi, R., et al. (2019). Methods in Ecology and Evolution, 10(2), 225-232.
 
 ===============================================================================
@@ -121,7 +135,8 @@ try:
     from sklearn.ensemble import RandomForestClassifier
     from sklearn.metrics import (
         roc_auc_score, accuracy_score, cohen_kappa_score,
-        confusion_matrix, roc_curve, brier_score_loss
+        confusion_matrix, roc_curve, brier_score_loss,
+        average_precision_score, matthews_corrcoef, f1_score  # v1.2.0
     )
     from sklearn.inspection import permutation_importance
     import joblib
@@ -148,7 +163,7 @@ except ImportError:
 class Config:
     """Configuración centralizada con trazabilidad científica."""
 
-    VERSION: str = "1.1.0"
+    VERSION: str = "1.2.0"
     AUTOR: str = "Víctor Hugo Pinto Páez"
     UNIVERSIDAD: str = "Universidad San Gregorio de Portoviejo"
     TITULO_TESIS: str = (
@@ -158,7 +173,10 @@ class Config:
     )
 
     # --- Rutas ---
-    BASE_DIR: Path = Path(r"<RUTA_LOCAL>")
+    # ⚠ SANITIZADO: reemplace <RUTA_LOCAL> con la ruta de su proyecto.
+    # BASE_DIR  → directorio raíz donde se guardarán modelos y métricas.
+    # Ver nota de sanitización al inicio del script.
+    BASE_DIR: Path = Path("<RUTA_LOCAL>/resultados")
     DATASETS_DIR: Path = field(default=None)
     OUTPUT_DIR: Path = field(default=None)
     REPORTES_DIR: Path = field(default=None)
@@ -232,12 +250,14 @@ class Config:
     TIMESTAMP: str = field(default_factory=lambda: datetime.now().strftime('%Y%m%d_%H%M%S'))
 
     def __post_init__(self):
+        # ⚠ SANITIZADO: reemplace <RUTA_LOCAL>/datos/sdm_training con la
+        # ruta donde guardó los datasets generados por el Script 05B/05C.
         if self.DATASETS_DIR is None:
-            self.DATASETS_DIR = Path(r"<RUTA_LOCAL>")
+            self.DATASETS_DIR = Path("<RUTA_LOCAL>/datos/sdm_training")
         if self.OUTPUT_DIR is None:
-            self.OUTPUT_DIR = self.BASE_DIR / "04_RESULTADOS" / "fase4_modelamiento" / "random_forest"
+            self.OUTPUT_DIR = self.BASE_DIR / "fase4_modelamiento" / "random_forest"
         if self.REPORTES_DIR is None:
-            self.REPORTES_DIR = self.BASE_DIR / "05_DOCUMENTACION" / "reportes_auditoria"
+            self.REPORTES_DIR = self.BASE_DIR / "reportes_auditoria"
 
         for subdir in ['modelos', 'metricas', 'shap', 'auditoria']:
             (self.OUTPUT_DIR / subdir).mkdir(parents=True, exist_ok=True)
@@ -299,7 +319,7 @@ def crear_folds_espaciales(df: pd.DataFrame, n_folds: int,
                            block_size: float) -> List[Tuple[np.ndarray, np.ndarray]]:
     """
     Folds de CV basados en bloques espaciales de latitud.
-    
+
     Referencia: Valavi et al. (2019), Roberts et al. (2017).
     """
     if 'lat' not in df.columns:
@@ -368,6 +388,7 @@ def calcular_umbral_optimo(y_true, y_prob):
 def calcular_metricas(y_true, y_prob, umbral=None):
     """Métricas completas de evaluación."""
     auc = roc_auc_score(y_true, y_prob)
+    auc_pr = average_precision_score(y_true, y_prob)  # v1.2.0
     if umbral is None:
         umbral = calcular_umbral_optimo(y_true, y_prob)
 
@@ -376,14 +397,18 @@ def calcular_metricas(y_true, y_prob, umbral=None):
     kappa = cohen_kappa_score(y_true, y_pred)
     acc = accuracy_score(y_true, y_pred)
     brier = brier_score_loss(y_true, y_prob)
+    mcc = matthews_corrcoef(y_true, y_pred)   # v1.2.0
+    f1 = f1_score(y_true, y_pred)             # v1.2.0
 
     tn, fp, fn, tp = confusion_matrix(y_true, y_pred, labels=[0, 1]).ravel()
     sens = tp / (tp + fn) if (tp + fn) > 0 else 0
     spec = tn / (tn + fp) if (tn + fp) > 0 else 0
 
     return {
-        'AUC_ROC': round(auc, 4), 'TSS': round(tss, 4),
-        'Kappa': round(kappa, 4), 'Accuracy': round(acc, 4),
+        'AUC_ROC': round(auc, 4), 'AUC_PR': round(auc_pr, 4),
+        'TSS': round(tss, 4),
+        'Kappa': round(kappa, 4), 'MCC': round(mcc, 4), 'F1': round(f1, 4),
+        'Accuracy': round(acc, 4),
         'Sensitivity': round(sens, 4), 'Specificity': round(spec, 4),
         'Brier_Score': round(brier, 4), 'Umbral_optimo': round(umbral, 4),
         'TP': int(tp), 'TN': int(tn), 'FP': int(fp), 'FN': int(fn)
@@ -464,13 +489,58 @@ def entrenar_evaluar_cultivo(df, variables, cultivo, config):
     metricas_cv = calcular_metricas(y[evaluated], y_prob_cv[evaluated])
 
     aucs = [m['AUC_ROC'] for m in metricas_folds]
+    auc_prs = [m['AUC_PR'] for m in metricas_folds]       # v1.2.0
     tsss = [m['TSS'] for m in metricas_folds]
+    mccs = [m['MCC'] for m in metricas_folds]              # v1.2.0
+    f1s = [m['F1'] for m in metricas_folds]                # v1.2.0
 
-    print(f"\n        --- MÉTRICAS CV CONSOLIDADAS ---")
-    print(f"        AUC-ROC:  {metricas_cv['AUC_ROC']:.4f} (σ={np.std(aucs):.4f})")
-    print(f"        TSS:      {metricas_cv['TSS']:.4f} (σ={np.std(tsss):.4f})")
-    print(f"        Kappa:    {metricas_cv['Kappa']:.4f}")
-    print(f"        Accuracy: {metricas_cv['Accuracy']:.4f}")
+    print(f"\n        --- MÉTRICAS CV CONSOLIDADAS (v1.2.0) ---")
+    print(f"        AUC-ROC:      {metricas_cv['AUC_ROC']:.4f} (σ={np.std(aucs):.4f})")
+    print(f"        AUC-PR:       {metricas_cv['AUC_PR']:.4f} (σ={np.std(auc_prs):.4f})")
+    print(f"        TSS:          {metricas_cv['TSS']:.4f} (σ={np.std(tsss):.4f})")
+    print(f"        Kappa:        {metricas_cv['Kappa']:.4f}")
+    print(f"        MCC:          {metricas_cv['MCC']:.4f} (σ={np.std(mccs):.4f})")
+    print(f"        F1:           {metricas_cv['F1']:.4f} (σ={np.std(f1s):.4f})")
+    print(f"        Brier Score:  {metricas_cv['Brier_Score']:.4f}")
+    print(f"        Umbral (TSS): {metricas_cv['Umbral_optimo']:.4f}")
+    print(f"        Accuracy:     {metricas_cv['Accuracy']:.4f}")
+    print(f"        Confusión:    TP={metricas_cv['TP']} TN={metricas_cv['TN']} "
+          f"FP={metricas_cv['FP']} FN={metricas_cv['FN']}")
+
+    # -----------------------------------------------------------------
+    # 1b. DIAGNÓSTICO DE MULTICOLINEALIDAD (VIF) — v1.2.0
+    # -----------------------------------------------------------------
+    print(f"\n  [1b/5] Diagnóstico de multicolinealidad (VIF)...")
+    vif_data = None
+    try:
+        from statsmodels.stats.outliers_influence import variance_inflation_factor
+        X_df_vif = pd.DataFrame(X, columns=variables).astype(np.float64)
+        vif_values = []
+        for i in range(X_df_vif.shape[1]):
+            try:
+                vif_val = variance_inflation_factor(X_df_vif.values, i)
+            except Exception:
+                vif_val = np.nan
+            vif_values.append(vif_val)
+        vif_data = pd.DataFrame({
+            'variable': variables,
+            'VIF': [round(v, 2) for v in vif_values]
+        }).sort_values('VIF', ascending=False)
+        high_vif = vif_data[vif_data['VIF'] > 10]
+        if len(high_vif) == 0:
+            print(f"        Ninguna variable con VIF > 10")
+        else:
+            print(f"        Variables con VIF > 10 ({len(high_vif)} de {len(variables)}):")
+            for _, row in high_vif.iterrows():
+                print(f"          {row['variable']}: VIF = {row['VIF']:.1f}")
+            print(f"        NOTA: RF robusto a multicolinealidad (Breiman 2001). Retenidas.")
+        vif_path = (config.OUTPUT_DIR / "modelos" / f"vif_{cultivo}_{config.TIMESTAMP}.csv")
+        vif_data.to_csv(vif_path, index=False)
+        print(f"        Guardado: {vif_path.name}")
+    except ImportError:
+        print(f"        ⚠ statsmodels no disponible. pip install statsmodels")
+    except Exception as e:
+        print(f"        ⚠ Error en VIF: {e}")
 
     # -----------------------------------------------------------------
     # 2. MODELO FINAL
@@ -654,8 +724,8 @@ def generar_reporte(resultados, config):
 
     with open(reporte_path, 'w', encoding='utf-8') as f:
         f.write("=" * 70 + "\n")
-        f.write("REPORTE DE AUDITORÍA - SCRIPT 06 v1.1.0\n")
-        f.write("ENTRENAMIENTO DE RANDOM FOREST + ANÁLISIS SHAP\n")
+        f.write("REPORTE DE AUDITORÍA - SCRIPT 06 v1.2.0\n")
+        f.write("ENTRENAMIENTO DE RANDOM FOREST + BLINDAJE MÉTRICO\n")
         f.write("=" * 70 + "\n\n")
 
         f.write(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
@@ -746,11 +816,13 @@ def generar_reporte(resultados, config):
 
         # Tabla resumen
         f.write("-" * 70 + "\n")
-        f.write("TABLA RESUMEN\n")
+        f.write("TABLA RESUMEN (v1.2.0 — blindaje métrico)\n")
         f.write("-" * 70 + "\n\n")
-        f.write(f"{'Cultivo':<12} {'AUC':>8} {'TSS':>8} {'Kappa':>8} "
-                f"{'OOB Err':>8} {'Vars':>6} {'Estado':>10}\n")
-        f.write(f"{'─'*12} {'─'*8} {'─'*8} {'─'*8} {'─'*8} {'─'*6} {'─'*10}\n")
+        f.write(f"{'Cultivo':<10} {'AUC':>7} {'AUC-PR':>7} {'TSS':>7} "
+                f"{'MCC':>7} {'F1':>7} {'Brier':>7} {'Kappa':>7} "
+                f"{'OOB':>7} {'Estado':>10}\n")
+        f.write(f"{'─'*10} {'─'*7} {'─'*7} {'─'*7} {'─'*7} {'─'*7} "
+                f"{'─'*7} {'─'*7} {'─'*7} {'─'*10}\n")
 
         todos_aprobados = True
         for res in resultados:
@@ -764,10 +836,35 @@ def generar_reporte(resultados, config):
             if not aprobado:
                 todos_aprobados = False
             estado = "APROBADO" if aprobado else "REVISIÓN"
-            f.write(f"{res['cultivo']:<12} {m['AUC_ROC']:>8.4f} "
-                    f"{m['TSS']:>8.4f} {m['Kappa']:>8.4f} "
-                    f"{res['oob_error']:>8.4f} {len(res['variables']):>6} "
+            f.write(f"{res['cultivo']:<10} "
+                    f"{m['AUC_ROC']:>7.4f} "
+                    f"{m['AUC_PR']:>7.4f} "
+                    f"{m['TSS']:>7.4f} "
+                    f"{m['MCC']:>7.4f} "
+                    f"{m['F1']:>7.4f} "
+                    f"{m['Brier_Score']:>7.4f} "
+                    f"{m['Kappa']:>7.4f} "
+                    f"{res['oob_error']:>7.4f} "
                     f"{estado:>10}\n")
+
+        # v1.2.0: Matrices de confusión
+        f.write(f"\n{'─'*70}\n")
+        f.write("MATRICES DE CONFUSIÓN "
+                "(CV agregada, umbral max-TSS)\n")
+        f.write(f"{'─'*70}\n\n")
+        for res in resultados:
+            m = res['metricas_cv']
+            total = m['TP'] + m['TN'] + m['FP'] + m['FN']
+            f.write(f"  {res['cultivo'].upper()} "
+                    f"({config.NOMBRES_CIENTIFICOS[res['cultivo']]}) "
+                    f"— n={total}\n")
+            f.write(f"  Umbral: {m['Umbral_optimo']:.4f} "
+                    f"(max-TSS, Allouche et al. 2006)\n")
+            f.write(f"              Pred=0   Pred=1\n")
+            f.write(f"    Real=0     {m['TN']:>5}    {m['FP']:>5}  "
+                    f"(Specificity={m['Specificity']:.4f})\n")
+            f.write(f"    Real=1     {m['FN']:>5}    {m['TP']:>5}  "
+                    f"(Sensitivity={m['Sensitivity']:.4f})\n\n")
 
         # Decisión
         f.write(f"\n{'='*70}\n")
@@ -784,12 +881,14 @@ def generar_reporte(resultados, config):
         f.write("-" * 70 + "\n")
         f.write("Allouche, O., et al. (2006). J. Applied Ecology, 43(6), 1223-1232.\n")
         f.write("Breiman, L. (2001). Machine Learning, 45(1), 5-32.\n")
+        f.write("Chicco, D., & Jurman, G. (2020). BMC Genomics, 21, 6.\n")
         f.write("Cutler, D.R., et al. (2007). Ecology, 88(11), 2783-2792.\n")
         f.write("King, G., & Zeng, L. (2001). Political Analysis, 9(2), 137-163.\n")
         f.write("Liu, C., et al. (2013). J. Biogeography, 40(4), 778-789.\n")
         f.write("Lundberg, S.M., & Lee, S.I. (2017). NeurIPS 30.\n")
         f.write("Probst, P., & Boulesteix, A.L. (2018). JMLR, 18, 1-18.\n")
         f.write("Roberts, D.R., et al. (2017). Ecography, 40(8), 913-929.\n")
+        f.write("Saito, T., & Rehmsmeier, M. (2015). PLoS ONE, 10, e0118432.\n")
         f.write("Valavi, R., et al. (2019). MEE, 10(2), 225-232.\n")
 
     return reporte_path
@@ -801,8 +900,8 @@ def generar_reporte(resultados, config):
 
 def main():
     print("\n" + "╔" + "═"*68 + "╗")
-    print("║" + " SCRIPT 06 v1.1.0: RANDOM FOREST + ANÁLISIS SHAP".center(68) + "║")
-    print("║" + " Corregido: 16 variables por cultivo (15 comunes + 1 estrés)".center(68) + "║")
+    print("║" + " SCRIPT 06 v1.2.0: RANDOM FOREST + ANÁLISIS SHAP".center(68) + "║")
+    print("║" + " Blindaje métrico: AUC-PR, MCC, F1, Brier, VIF".center(68) + "║")
     print("║" + f" {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}".center(68) + "║")
     print("╚" + "═"*68 + "╝")
 
@@ -813,6 +912,7 @@ def main():
 
     if not config.DATASETS_DIR.exists():
         print(f"    ✗ No se encontró: {config.DATASETS_DIR}")
+        print(f"    Configure DATASETS_DIR en la clase Config antes de ejecutar.")
         sys.exit(1)
 
     resultados_todos = []
@@ -829,7 +929,6 @@ def main():
 
         print(f"  ✓ Archivo: {filepath.name}")
 
-        # Obtener las 13 variables específicas para este cultivo
         variables = config.get_variables_cultivo(cultivo)
         print(f"  Variables: {len(variables)} (15 comunes + "
               f"{config.VARIABLE_ESTRES_CULTIVO[cultivo]})")
@@ -908,12 +1007,13 @@ def main():
     t_fin = datetime.now()
 
     print(f"\n{'═'*70}")
-    print(f"  RESUMEN FINAL (v1.1.0 — 16 variables por modelo)")
+    print(f"  RESUMEN FINAL (v1.2.0 — blindaje métrico)")
     print(f"{'═'*70}")
 
-    print(f"\n  {'Cultivo':<12} {'AUC':>8} {'TSS':>8} {'Kappa':>8} "
-          f"{'OOB Err':>8} {'Vars':>6} {'Estado':>10}")
-    print(f"  {'─'*12} {'─'*8} {'─'*8} {'─'*8} {'─'*8} {'─'*6} {'─'*10}")
+    print(f"\n  {'Cultivo':<10} {'AUC':>7} {'AUC-PR':>7} {'TSS':>7} "
+          f"{'MCC':>7} {'F1':>7} {'Brier':>7} {'OOB':>7} {'Estado':>10}")
+    print(f"  {'─'*10} {'─'*7} {'─'*7} {'─'*7} {'─'*7} {'─'*7} "
+          f"{'─'*7} {'─'*7} {'─'*10}")
 
     for res in resultados_todos:
         m = res['metricas_cv']
@@ -924,16 +1024,21 @@ def main():
             res['oob_error'] <= config.UMBRAL_OOB_ERROR
         )
         estado = "✓ APROBADO" if aprobado else "✗ REVISIÓN"
-        print(f"  {res['cultivo']:<12} {m['AUC_ROC']:>8.4f} "
-              f"{m['TSS']:>8.4f} {m['Kappa']:>8.4f} "
-              f"{res['oob_error']:>8.4f} {len(res['variables']):>6} "
+        print(f"  {res['cultivo']:<10} "
+              f"{m['AUC_ROC']:>7.4f} "
+              f"{m['AUC_PR']:>7.4f} "
+              f"{m['TSS']:>7.4f} "
+              f"{m['MCC']:>7.4f} "
+              f"{m['F1']:>7.4f} "
+              f"{m['Brier_Score']:>7.4f} "
+              f"{res['oob_error']:>7.4f} "
               f"{estado:>10}")
 
     print(f"\n  Tiempo total: {t_fin - t_inicio}")
     print(f"  Archivos en: {config.OUTPUT_DIR}")
 
     print(f"\n{'═'*70}")
-    print(f"  ✓ SCRIPT 06 v1.1.0 COMPLETADO")
+    print(f"  ✓ SCRIPT 06 v1.2.0 COMPLETADO")
     print(f"  Siguiente paso: Script 07 (Red Bayesiana) o")
     print(f"  Script de proyección RF a escenarios CMIP6")
     print(f"{'═'*70}\n")

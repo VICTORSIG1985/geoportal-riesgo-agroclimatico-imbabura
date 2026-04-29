@@ -13,7 +13,7 @@ export default function DatosPage() {
     <>
       <PageHero
         title="Datos Abiertos"
-        subtitle="Acceso libre y reproducible a los 3 Feature Services REST, al código fuente, al dataset autoritativo y a los metadatos ISO 19115. Licencia CC BY 4.0."
+        subtitle="Acceso libre y reproducible a las 3 capas de datos REST, al código fuente, al dataset autoritativo y a los metadatos ISO 19115. Licencia CC BY 4.0."
         image="wm_yahuarcocha.jpg"
         overlayColor="rgba(15,76,129,0.4)"
         credit="Imagen: Laguna de Yahuarcocha (Ibarra) — Wikimedia Commons · CC BY-SA"
@@ -25,14 +25,14 @@ export default function DatosPage() {
           <ul className="text-sm text-[var(--text-muted)] space-y-1 list-disc list-inside">
             <li><strong>Para consulta visual:</strong> use nuestro <Link href="/visor" className="text-[var(--primary)] font-semibold">Visor Cartográfico</Link> — mapa interactivo con filtros y popups.</li>
             <li><strong>Para descarga inmediata:</strong> botón <em>Descargar GeoJSON</em> debajo de cada capa.</li>
-            <li><strong>Para integrar en tu SIG:</strong> copia la <em>URL del Feature Service</em> y pégala en ArcGIS Pro, QGIS, R (sf), Python (geopandas, arcgis).</li>
+            <li><strong>Para integrar en tu SIG:</strong> copia la <em>URL del servicio de capas</em> y pégala en ArcGIS Pro, QGIS, R (sf), Python (geopandas, arcgis).</li>
             <li><strong>Para reproducir el análisis:</strong> descarga el código Python por fases (sección Código fuente, abajo).</li>
           </ul>
         </div>
       </section>
 
       <section className="container-prose py-6">
-        <h2 className="mb-6 flex items-center gap-3"><Database className="text-[var(--primary)]"/> Feature Services REST públicos</h2>
+        <h2 className="mb-6 flex items-center gap-3"><Database className="text-[var(--primary)]"/> Capas de datos geoespaciales públicas</h2>
         <div className="space-y-5">
           {layers.map(L => (
             <div key={L.id} className="card">
@@ -156,7 +156,7 @@ export default function DatosPage() {
           <ul className="text-sm space-y-1 list-disc list-inside">
             <li><strong>Atribución:</strong> citar a Pinto Páez, V. H. (2026) con DOI <a href={`https://doi.org/${SITE.doi}`} target="_blank" rel="noopener">{SITE.doi}</a></li>
             <li>No hay restricciones adicionales que limiten los usos autorizados por la licencia</li>
-            <li><strong>Solo lectura:</strong> los Feature Services y el visor son públicos pero <strong>no permiten modificación</strong>; cualquier análisis derivado debe realizarse sobre copias locales.</li>
+            <li><strong>Solo lectura:</strong> las capas de datos y el visor son públicos pero <strong>no permiten modificación</strong>; cualquier análisis derivado debe realizarse sobre copias locales.</li>
           </ul>
         </div>
       </section>

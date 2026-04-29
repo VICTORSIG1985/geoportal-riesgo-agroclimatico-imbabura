@@ -9,7 +9,7 @@ const services = [
   { href: "/fichas", icon: FileText, color: "#228B6E", title: "Fichas Parroquiales", desc: "42 PDFs públicos con IR por escenario, cultivo más vulnerable y recomendación operativa." },
   { href: "/metodologia", icon: Microscope, color: "#6B4E9B", title: "Metodología", desc: "Pipeline de 22 scripts Python en 5 fases, Random Forest + Red Bayesiana, métricas de desempeño." },
   { href: "/resultados", icon: BarChart3, color: "#EF8A62", title: "Resultados Interactivos", desc: "Ranking parroquial dinámico, IR por cultivo/SSP/horizonte, tablas y gráficos del manuscrito." },
-  { href: "/datos", icon: Database, color: "#333333", title: "Datos Abiertos", desc: "3 Feature Services REST públicos, metadatos ISO 19115, código Python y DOI Zenodo." },
+  { href: "/datos", icon: Database, color: "#333333", title: "Datos Abiertos", desc: "3 capas de datos geoespaciales públicas, metadatos ISO 19115, código Python y DOI Zenodo." },
   { href: "/descargas", icon: Download, color: "#1f5fa8", title: "Descargas", desc: "22 scripts Python auditados y publicados por fase metodológica para trazabilidad científica." },
   { href: "/asistente", icon: Bot, color: "#4F46E5", title: "Asistente IA", desc: "Consulta en lenguaje natural sobre el manuscrito. Búsqueda local + Claude API opcional (BYOK)." },
   { href: "/acerca", icon: Info, color: "#4A5568", title: "Acerca del Geoportal", desc: "Autor, institución, cita sugerida, manuscrito de referencia, licencia y contacto." },

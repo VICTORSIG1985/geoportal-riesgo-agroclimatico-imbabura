@@ -129,7 +129,7 @@ export default function MapViewer() {
   // Init map + base layers
   useEffect(() => {
     if (!containerRef.current) return;
-    setLoading("Cargando basemap...");
+    setLoading("Cargando mapa base...");
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
@@ -456,7 +456,7 @@ export default function MapViewer() {
               <div className="mt-2 text-[var(--text-muted)] space-y-1">
                 <p><strong>Modo Priorización</strong>: muestra la clasificación final de cada parroquia (Muy Alta / Alta / Alerta / Monitoreo / Favorable). Ideal para lectura rápida.</p>
                 <p><strong>Modo Análisis</strong>: permite filtrar por cultivo (papa, maíz, fréjol, quinua), escenario climático (SSP) y periodo de tiempo (horizonte) para ver el riesgo específico.</p>
-                <p><strong>Hover</strong> sobre un polígono: tooltip breve. <strong>Click</strong>: abre ficha con datos completos y descarga del PDF.</p>
+                <p><strong>Pase el cursor</strong> sobre un polígono: información resumida. <strong>Haga clic</strong>: abre ficha con datos completos y descarga del PDF.</p>
                 <p><strong>Zonas de interés</strong>: accesos directos a Intag, Ibarra, Otavalo, Chota, Urcuquí.</p>
               </div>
             </details>
@@ -640,7 +640,7 @@ export default function MapViewer() {
           {/* Metadatos del visor */}
           <div className="pt-2 border-t border-[var(--border)] text-[10px] text-[var(--text-muted)] space-y-0.5">
             <div className="flex items-center gap-1 font-semibold text-[11px] mb-1"><Info size={11}/> Metadatos</div>
-            <div>Fuente: ArcGIS Online USGP-EC · 3 Feature Services REST</div>
+            <div>Fuente: ArcGIS Online USGP-EC · 3 capas de datos REST</div>
             <div>Variable: IR = 0·P(Bajo) + 0,5·P(Medio) + 1·P(Alto)</div>
             <div>SRS: WGS84 (EPSG:4326)</div>
             <div>Resolución: parroquial (~10 km raster climático)</div>
